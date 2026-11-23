@@ -69,10 +69,16 @@
     input[type="number"].no-spinner {
       -moz-appearance: textfield;
     }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #ffffff !important; }
+      #clientView { max-width: none !important; padding: 0 !important; }
+      #clientCard { box-shadow: none !important; border: none !important; }
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-slate-900 selection:text-white">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+  <div id="mainView" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
     <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200/80 text-xs font-medium text-slate-600 mb-2 shadow-xs">
@@ -87,17 +93,23 @@
         </p>
       </div>
 
+      <div class="self-start sm:self-auto flex flex-wrap gap-2">
+      <button id="clientViewBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-sm font-medium shadow-xs transition cursor-pointer" title="Открыть экран с ценой для заказчика">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+        Для заказчика
+      </button>
       <button
         id="resetBtn"
         type="button"
         class="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 active:bg-slate-200/70 text-slate-700 text-sm font-medium border border-slate-200 shadow-xs transition cursor-pointer"
-        title="Сбросить параметры к значениям по умолчанию"
+        title="Обнулить параметры заказа (ваши цены на группы сохраняются)"
       >
         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
         Сбросить
       </button>
+      </div>
     </header>
 
     <section aria-label="Ключевые показатели" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 sm:mb-8">
@@ -174,6 +186,15 @@
       </div>
 
       <div id="filamentGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+
+      <details id="ratesPanel" class="mt-4 rounded-2xl border border-slate-200/90 bg-slate-50/60">
+        <summary class="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-800">Мои цены на группы (€/г и €/ч)</summary>
+        <div class="px-4 pb-4">
+          <p class="text-xs text-slate-500 mb-3">Для каждой группы можно изменить цену пластика за грамм и стоимость часа работы принтера. Группы остаются, цены сохраняются в приложении.</p>
+          <div id="ratesEditor" class="space-y-2"></div>
+          <button id="resetRatesBtn" type="button" class="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 transition cursor-pointer">Вернуть стандартные цены</button>
+        </div>
+      </details>
     </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 sm:mb-8">
@@ -203,14 +224,14 @@
           <div class="flex items-center justify-between gap-4 mb-2">
             <label for="weightNumber" class="text-sm font-medium text-slate-700">3. Вес детали (из Bambu Studio)</label>
             <div class="flex items-center gap-1.5">
-              <input id="weightNumber" type="number" min="1" max="2000" step="1" value="60"
+              <input id="weightNumber" type="number" min="0" max="2000" step="1" value="60"
                 class="no-spinner w-24 px-3 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
               <span class="text-sm font-medium text-slate-500 w-6">г</span>
             </div>
           </div>
-          <input id="weightSlider" type="range" min="1" max="2000" step="1" value="60" aria-label="Ползунок веса детали в граммах" class="calc-slider" />
+          <input id="weightSlider" type="range" min="0" max="2000" step="1" value="60" aria-label="Ползунок веса детали в граммах" class="calc-slider" />
           <div class="flex justify-between text-[11px] text-slate-400 mt-1">
-            <span>1 г</span><span>500 г</span><span>1000 г</span><span>1500 г</span><span>2000 г</span>
+            <span>0 г</span><span>500 г</span><span>1000 г</span><span>1500 г</span><span>2000 г</span>
           </div>
         </div>
 
@@ -218,14 +239,14 @@
           <div class="flex items-center justify-between gap-4 mb-2">
             <label for="hoursNumber" class="text-sm font-medium text-slate-700">4. Время печати</label>
             <div class="flex items-center gap-1.5">
-              <input id="hoursNumber" type="number" min="0.1" max="100" step="0.1" value="2.0"
+              <input id="hoursNumber" type="number" min="0" max="100" step="0.1" value="2.0"
                 class="no-spinner w-24 px-3 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
               <span class="text-sm font-medium text-slate-500 w-6">ч</span>
             </div>
           </div>
-          <input id="hoursSlider" type="range" min="0.1" max="100" step="0.1" value="2.0" aria-label="Ползунок времени печати в часах" class="calc-slider" />
+          <input id="hoursSlider" type="range" min="0" max="100" step="0.1" value="2.0" aria-label="Ползунок времени печати в часах" class="calc-slider" />
           <div class="flex justify-between text-[11px] text-slate-400 mt-1">
-            <span>0,1 ч</span><span>25 ч</span><span>50 ч</span><span>75 ч</span><span>100 ч</span>
+            <span>0 ч</span><span>25 ч</span><span>50 ч</span><span>75 ч</span><span>100 ч</span>
           </div>
         </div>
 
@@ -430,6 +451,53 @@
     </section>
   </div>
 
+  <div id="clientView" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div class="no-print flex items-center justify-between gap-3 mb-5">
+      <button id="backBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-200 shadow-xs transition cursor-pointer">← К расчёту</button>
+      <span class="text-xs text-slate-500 text-right">Экран для заказчика: без себестоимости и прибыли</span>
+    </div>
+
+    <div class="no-print bg-white rounded-2xl border border-slate-200/80 p-4 mb-4 space-y-3 shadow-soft">
+      <div>
+        <label for="clientTitleInput" class="block text-xs font-medium text-slate-600 mb-1">Название заказа / изделия</label>
+        <input id="clientTitleInput" type="text" maxlength="120" placeholder="Например: Корпус для датчика" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      </div>
+      <div>
+        <label for="clientNameInput" class="block text-xs font-medium text-slate-600 mb-1">Заказчик (необязательно)</label>
+        <input id="clientNameInput" type="text" maxlength="120" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      </div>
+      <div>
+        <label for="clientNoteInput" class="block text-xs font-medium text-slate-600 mb-1">Примечание (сроки, условия, необязательно)</label>
+        <textarea id="clientNoteInput" rows="2" maxlength="500" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400"></textarea>
+      </div>
+    </div>
+
+    <article id="clientCard" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <div class="flex items-start justify-between gap-3 pb-4 border-b border-slate-200">
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Расчёт стоимости 3D-печати</div>
+          <h1 id="clientHeading" class="text-xl font-bold tracking-tight text-slate-900 mt-1">3D-печать на заказ</h1>
+          <p id="clientCustomer" class="hidden text-sm text-slate-600 mt-1"></p>
+        </div>
+        <div id="clientDate" class="text-xs text-slate-500 whitespace-nowrap"></div>
+      </div>
+      <div id="clientLines" class="divide-y divide-slate-100 text-sm"></div>
+      <div class="mt-4 pt-4 border-t-2 border-slate-900 flex items-baseline justify-between gap-3">
+        <span class="text-base font-semibold text-slate-900">Итого</span>
+        <span id="clientTotal" class="text-3xl font-bold tracking-tight text-slate-900">0,00 €</span>
+      </div>
+      <p id="clientUnitNote" class="text-xs text-slate-500 mt-1 text-right"></p>
+      <p id="clientNoteView" class="hidden mt-4 text-sm text-slate-700 whitespace-pre-line"></p>
+    </article>
+
+    <div class="no-print grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
+      <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition cursor-pointer">Поделиться</button>
+      <button id="copyBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-200 transition cursor-pointer">Копировать текст</button>
+      <button id="printBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-200 transition cursor-pointer">Печать / PDF</button>
+    </div>
+    <p id="clientToast" class="no-print text-xs text-emerald-700 mt-2 h-4"></p>
+  </div>
+
   <script>
     const FILAMENT_GROUPS = [
       {
@@ -501,9 +569,48 @@
       optPost: false,
       optModeling: false,
       searchQuery: '',
+      clientTitle: '',
+      clientName: '',
+      clientNote: '',
     };
 
     const state = { ...DEFAULTS };
+
+    /* ---------- Редактируемые цены групп ---------- */
+    const RATES_KEY = 'calc3d_rates_v1';
+    const rates = {};
+
+    function defaultRates() {
+      FILAMENT_GROUPS.forEach((g) => {
+        rates[g.id] = { plastic: g.plasticRate, printer: g.printerRate };
+      });
+    }
+    defaultRates();
+
+    function loadRates() {
+      try {
+        const raw = localStorage.getItem(RATES_KEY);
+        if (!raw) return;
+        const r = JSON.parse(raw);
+        FILAMENT_GROUPS.forEach((g) => {
+          const x = r && r[g.id];
+          if (x && Number.isFinite(x.plastic) && x.plastic >= 0) rates[g.id].plastic = x.plastic;
+          if (x && Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+        });
+      } catch (e) { /* ignore */ }
+    }
+
+    function saveRates() {
+      try { localStorage.setItem(RATES_KEY, JSON.stringify(rates)); } catch (e) { /* ignore */ }
+    }
+
+    function rateOf(group) {
+      return rates[group.id] || { plastic: group.plasticRate, printer: group.printerRate };
+    }
+
+    function spoolText(group) {
+      return `≈ ${Math.round(rateOf(group).plastic * 1000)} €/кг`;
+    }
 
     /* ---------- Сохранение настроек между запусками ---------- */
     const STORAGE_KEY = 'calc3d_state_v1';
@@ -515,13 +622,16 @@
         const s = JSON.parse(raw);
         if (GROUPS_MAP[s.groupId]) state.groupId = s.groupId;
         if (s.spool === 'mine' || s.spool === 'client') state.spool = s.spool;
-        if (Number.isFinite(s.weight)) state.weight = Math.min(2000, Math.max(1, Math.round(s.weight)));
-        if (Number.isFinite(s.hours)) state.hours = Math.min(100, Math.max(0.1, Math.round(s.hours * 10) / 10));
+        if (Number.isFinite(s.weight)) state.weight = Math.min(2000, Math.max(0, Math.round(s.weight)));
+        if (Number.isFinite(s.hours)) state.hours = Math.min(100, Math.max(0, Math.round(s.hours * 10) / 10));
         if (Number.isFinite(s.markup)) state.markup = Math.min(5, Math.max(1, s.markup));
         if (Number.isFinite(s.qty)) state.qty = Math.min(500, Math.max(1, Math.round(s.qty)));
         state.optAms = !!s.optAms;
         state.optPost = !!s.optPost;
         state.optModeling = !!s.optModeling;
+        if (typeof s.clientTitle === 'string') state.clientTitle = s.clientTitle.slice(0, 120);
+        if (typeof s.clientName === 'string') state.clientName = s.clientName.slice(0, 120);
+        if (typeof s.clientNote === 'string') state.clientNote = s.clientNote.slice(0, 500);
       } catch (e) { /* хранилище недоступно — используем значения по умолчанию */ }
     }
 
@@ -563,8 +673,8 @@
     }
 
     function calculateForGroup(group, params) {
-      const effectivePlasticRate = params.spool === 'client' ? 0 : group.plasticRate;
-      const printerRate = group.printerRate;
+      const effectivePlasticRate = params.spool === 'client' ? 0 : rateOf(group).plastic;
+      const printerRate = rateOf(group).printer;
 
       const plasticCostUnit = params.weight * effectivePlasticRate;
       const machineCostUnit = params.hours * printerRate;
@@ -688,7 +798,7 @@
           <div>
             <div class="flex items-start justify-between gap-2 mb-1">
               <span class="text-[11px] font-semibold uppercase tracking-wider ${isSelected ? 'text-slate-300' : 'text-slate-500'}">
-                Группа ${group.number} · ${group.spoolRef}
+                Группа ${group.number} · ${spoolText(group)}
               </span>
               ${isSelected ? '<span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950">Выбрано</span>' : ''}
             </div>
@@ -698,8 +808,8 @@
           </div>
           <div class="flex flex-wrap gap-1">${badgesHtml}</div>
           <div class="pt-2 border-t ${isSelected ? 'border-white/15 text-slate-200' : 'border-slate-200/70 text-slate-700'} flex items-center justify-between text-xs font-semibold">
-            <span>${formatNum(group.plasticRate, 3)} €/г</span>
-            <span>${formatNum(group.printerRate, 2)} €/ч</span>
+            <span>${formatNum(rateOf(group).plastic, 3)} €/г</span>
+            <span>${formatNum(rateOf(group).printer, 2)} €/ч</span>
           </div>
         `;
 
@@ -747,7 +857,7 @@
       badge.className = style.badge;
 
       badge.textContent = `Памятка Bambu Lab X2D · Группа ${group.number}`;
-      spoolRef.textContent = `Катушка: ${group.spoolRef}`;
+      spoolRef.textContent = `Катушка: ${spoolText(group)}`;
       title.textContent = group.title;
       body.textContent = group.printerNote;
 
@@ -792,6 +902,10 @@
       if (searchInput.value !== state.searchQuery) {
         searchInput.value = state.searchQuery;
       }
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote']].forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el && el.value !== state[key]) el.value = state[key];
+      });
       const clearBtn = document.getElementById('clearSearchBtn');
       if (state.searchQuery.trim().length > 0) {
         clearBtn.classList.remove('hidden');
@@ -877,7 +991,7 @@
 
       document.getElementById('batchQtyLabel').textContent = `${state.qty} шт.`;
       document.getElementById('batchSummaryMeta').textContent =
-        `Общий вес: ${(state.weight * state.qty).toLocaleString('ru-RU')} г · Общее время: ${formatHours(state.hours * state.qty)} · Катушка: ${activeGroup.spoolRef}`;
+        `Общий вес: ${(state.weight * state.qty).toLocaleString('ru-RU')} г · Общее время: ${formatHours(state.hours * state.qty)} · Катушка: ${spoolText(activeGroup)}`;
       document.getElementById('batchCostValue').textContent = formatEuro(res.batchDirectCost);
       document.getElementById('batchUnitPriceValue').textContent = formatEuro(res.unitFinalPrice);
       document.getElementById('batchPriceValue').textContent = formatEuro(res.batchTotalPrice);
@@ -929,7 +1043,7 @@
           </td>
           <td class="py-3.5 px-3 text-xs text-slate-600 whitespace-nowrap">
             <div>${formatNum(item.effectivePlasticRate, 3)} €/г · ${formatNum(item.printerRate, 2)} €/ч</div>
-            <div class="text-[11px] text-slate-400">Катушка: ${grp.spoolRef}</div>
+            <div class="text-[11px] text-slate-400">Катушка: ${spoolText(grp)}</div>
           </td>
           <td class="py-3.5 px-3 text-right text-slate-700 whitespace-nowrap">${formatEuro(item.unitCost)}</td>
           <td class="py-3.5 px-3 text-right text-slate-900 font-semibold whitespace-nowrap">${formatEuro(item.unitFinalPrice)}</td>
@@ -948,6 +1062,7 @@
           : 'preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition cursor-pointer';
       });
 
+      renderClientView();
       saveState();
     }
 
@@ -988,41 +1103,41 @@
       const weightSlider = document.getElementById('weightSlider');
       const weightNumber = document.getElementById('weightNumber');
       weightSlider.addEventListener('input', (e) => {
-        state.weight = clampStep(e.target.value, 1, 2000, 1);
+        state.weight = clampStep(e.target.value, 0, 2000, 1);
         render();
       });
       weightNumber.addEventListener('input', (e) => {
         if (e.target.value === '') return;
         const n = Number(e.target.value);
         if (Number.isFinite(n)) {
-          state.weight = Math.min(2000, Math.max(1, Math.round(n)));
+          state.weight = Math.min(2000, Math.max(0, Math.round(n)));
           weightSlider.value = state.weight;
           updateCalculationsOnly();
         }
       });
       weightNumber.addEventListener('change', (e) => {
-        state.weight = clampStep(e.target.value, 1, 2000, 1);
+        state.weight = clampStep(e.target.value, 0, 2000, 1);
         render();
       });
 
       const hoursSlider = document.getElementById('hoursSlider');
       const hoursNumber = document.getElementById('hoursNumber');
       hoursSlider.addEventListener('input', (e) => {
-        state.hours = clampStep(e.target.value, 0.1, 100, 0.1);
+        state.hours = clampStep(e.target.value, 0, 100, 0.1);
         render();
       });
       hoursNumber.addEventListener('input', (e) => {
         if (e.target.value === '') return;
         const n = Number(String(e.target.value).replace(',', '.'));
         if (Number.isFinite(n)) {
-          state.hours = Math.min(100, Math.max(0.1, Math.round(n * 10) / 10));
+          state.hours = Math.min(100, Math.max(0, Math.round(n * 10) / 10));
           hoursSlider.value = state.hours;
           updateCalculationsOnly();
         }
       });
       hoursNumber.addEventListener('change', (e) => {
         const raw = String(e.target.value).replace(',', '.');
-        state.hours = clampStep(raw, 0.1, 100, 0.1);
+        state.hours = clampStep(raw, 0, 100, 0.1);
         render();
       });
 
@@ -1088,14 +1203,183 @@
       });
 
       document.getElementById('resetBtn').addEventListener('click', () => {
-        Object.assign(state, DEFAULTS);
+        Object.assign(state, DEFAULTS, { weight: 0, hours: 0 });
         render();
       });
     }
 
+    /* ---------- Редактор цен групп ---------- */
+    function renderRateEditor() {
+      const box = document.getElementById('ratesEditor');
+      const inputCls = 'rate-input no-spinner w-full px-2.5 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400';
+      box.innerHTML = FILAMENT_GROUPS.map((g) => {
+        const r = rates[g.id];
+        return `
+          <div class="grid grid-cols-2 sm:grid-cols-12 items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200/80">
+            <div class="col-span-2 sm:col-span-6 text-xs font-semibold text-slate-800">Группа ${g.number} · ${g.title}</div>
+            <label class="sm:col-span-3 flex items-center gap-1.5 text-xs text-slate-500">
+              <input type="number" inputmode="decimal" min="0" step="0.001" value="${r.plastic}" data-group="${g.id}" data-kind="plastic" class="${inputCls}" aria-label="Цена пластика, €/г, группа ${g.number}" /> €/г
+            </label>
+            <label class="sm:col-span-3 flex items-center gap-1.5 text-xs text-slate-500">
+              <input type="number" inputmode="decimal" min="0" step="0.01" value="${r.printer}" data-group="${g.id}" data-kind="printer" class="${inputCls}" aria-label="Стоимость часа принтера, €/ч, группа ${g.number}" /> €/ч
+            </label>
+          </div>`;
+      }).join('');
+    }
+
+    /* ---------- Экран для заказчика ---------- */
+    function clientData() {
+      const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
+      const r = calculateForGroup(g, state);
+      const lines = [];
+
+      const info = [];
+      if (state.weight > 0) info.push(`≈ ${state.weight} г`);
+      if (state.hours > 0) info.push(`≈ ${formatHours(state.hours)}`);
+      const subParts = [`${state.qty} шт. × ${formatEuro(r.printedUnitPrice)}`];
+      if (info.length) subParts.push(`на деталь: ${info.join(', ')}`);
+      if (state.spool === 'client') subParts.push('пластик заказчика');
+      lines.push({ title: `3D-печать · ${g.title}`, sub: subParts.join(' · '), sum: r.printedBatchSubtotal });
+
+      if (state.optAms) lines.push({ title: 'Многоцветная печать (AMS)', sub: '', sum: r.amsSurcharge });
+      if (state.optPost) lines.push({ title: 'Постобработка', sub: `${state.qty} шт. × ${formatEuro(EXTRAS.postPerUnit)}`, sum: r.postBatchCost });
+      if (state.optModeling) lines.push({ title: '3D-моделирование по размерам заказчика', sub: 'разово', sum: r.modelingBatchCost });
+
+      return { r, lines };
+    }
+
+    function renderClientView() {
+      const { r, lines } = clientData();
+      document.getElementById('clientHeading').textContent = state.clientTitle.trim() || '3D-печать на заказ';
+      const cust = document.getElementById('clientCustomer');
+      if (state.clientName.trim()) {
+        cust.textContent = `Заказчик: ${state.clientName.trim()}`;
+        cust.classList.remove('hidden');
+      } else {
+        cust.classList.add('hidden');
+      }
+      document.getElementById('clientDate').textContent = new Date().toLocaleDateString('ru-RU');
+
+      document.getElementById('clientLines').innerHTML = lines.map((l) => `
+        <div class="flex items-start justify-between gap-4 py-3">
+          <div>
+            <div class="font-medium text-slate-900">${l.title}</div>
+            ${l.sub ? `<div class="text-xs text-slate-500 mt-0.5">${l.sub}</div>` : ''}
+          </div>
+          <div class="font-semibold text-slate-900 whitespace-nowrap">${formatEuro(l.sum)}</div>
+        </div>`).join('');
+
+      document.getElementById('clientTotal').textContent = formatEuro(r.batchTotalPrice);
+      document.getElementById('clientUnitNote').textContent =
+        state.qty > 1 ? `В среднем ${formatEuro(r.unitFinalPrice)} за 1 шт.` : '';
+
+      const noteEl = document.getElementById('clientNoteView');
+      if (state.clientNote.trim()) {
+        noteEl.textContent = state.clientNote.trim();
+        noteEl.classList.remove('hidden');
+      } else {
+        noteEl.classList.add('hidden');
+      }
+    }
+
+    function buildClientText() {
+      const { r, lines } = clientData();
+      const out = [];
+      out.push('Расчёт стоимости 3D-печати');
+      out.push(state.clientTitle.trim() || '3D-печать на заказ');
+      if (state.clientName.trim()) out.push(`Заказчик: ${state.clientName.trim()}`);
+      out.push(`Дата: ${new Date().toLocaleDateString('ru-RU')}`);
+      out.push('');
+      lines.forEach((l) => out.push(`• ${l.title}${l.sub ? ` (${l.sub})` : ''}: ${formatEuro(l.sum)}`));
+      out.push('');
+      out.push(`Итого: ${formatEuro(r.batchTotalPrice)}`);
+      if (state.qty > 1) out.push(`В среднем ${formatEuro(r.unitFinalPrice)} за 1 шт.`);
+      if (state.clientNote.trim()) { out.push(''); out.push(state.clientNote.trim()); }
+      return out.join('\n');
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('clientToast');
+      el.textContent = msg;
+      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+    }
+
+    async function copyClientText() {
+      const text = buildClientText();
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (err) { /* ignore */ }
+        ta.remove();
+      }
+      showToast('Текст скопирован');
+    }
+
+    function showClientView(on) {
+      document.getElementById('mainView').classList.toggle('hidden', on);
+      document.getElementById('clientView').classList.toggle('hidden', !on);
+      if (on) renderClientView();
+      window.scrollTo(0, 0);
+    }
+
+    function bindExtraEvents() {
+      document.getElementById('ratesEditor').addEventListener('input', (e) => {
+        const t = e.target;
+        if (!t.dataset || !t.dataset.group) return;
+        const v = parseFloat(String(t.value).replace(',', '.'));
+        if (!Number.isFinite(v) || v < 0) return;
+        rates[t.dataset.group][t.dataset.kind] = v;
+        saveRates();
+        renderFilamentGroupCards();
+        updateCalculationsOnly();
+      });
+
+      document.getElementById('resetRatesBtn').addEventListener('click', () => {
+        defaultRates();
+        saveRates();
+        renderRateEditor();
+        render();
+      });
+
+      document.getElementById('clientViewBtn').addEventListener('click', () => { location.hash = 'client'; });
+      document.getElementById('backBtn').addEventListener('click', () => {
+        if (location.hash === '#client') history.back(); else showClientView(false);
+      });
+      window.addEventListener('hashchange', () => showClientView(location.hash === '#client'));
+
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote']].forEach(([id, key]) => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          state[key] = e.target.value;
+          renderClientView();
+          saveState();
+        });
+      });
+
+      document.getElementById('copyBtn').addEventListener('click', copyClientText);
+      document.getElementById('printBtn').addEventListener('click', () => window.print());
+      document.getElementById('shareBtn').addEventListener('click', async () => {
+        const text = buildClientText();
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: state.clientTitle.trim() || 'Расчёт стоимости 3D-печати', text });
+          } catch (e) { /* пользователь закрыл окно */ }
+        } else {
+          copyClientText();
+        }
+      });
+    }
+
     loadState();
+    loadRates();
     bindEvents();
+    bindExtraEvents();
+    renderRateEditor();
     render();
+    showClientView(location.hash === '#client');
 
     /* ---------- Офлайн-режим (PWA) ---------- */
     if ('serviceWorker' in navigator) {
