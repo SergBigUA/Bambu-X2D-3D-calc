@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Калькулятор стоимости 3D-печати · Bambu Lab X2D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            soft: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04)',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    input[type="range"].calc-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 9999px;
+      background: #e2e8f0;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"].calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: #0f172a;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+      transition: transform 0.12s ease, background-color 0.12s ease;
+    }
+    input[type="range"].calc-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.08);
+      background: #1e293b;
+    }
+    input[type="range"].calc-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: #0f172a;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+      transition: transform 0.12s ease, background-color 0.12s ease;
+    }
+    input[type="number"].no-spinner::-webkit-inner-spin-button,
+    input[type="number"].no-spinner::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"].no-spinner {
+      -moz-appearance: textfield;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #ffffff !important; }
+      #clientView { max-width: none !important; padding: 0 !important; }
+      #clientCard { box-shadow: none !important; border: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-slate-900 selection:text-white">
+  <div id="mainView" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200/80 text-xs font-medium text-slate-600 mb-2 shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Bambu Lab X2D · Линейка филаментов Bambu Lab · Расчёт в €
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          Калькулятор стоимости 3D-печати
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">
+          Все разновидности пластика Bambu Lab сгруппированы по ценовым категориям, с учётом владельца катушки, допуслуг и партии.
+        </p>
+      </div>
+
+      <div class="self-start sm:self-auto flex flex-wrap gap-2">
+      <button id="clientViewBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-sm font-medium shadow-xs transition cursor-pointer" title="Открыть экран с ценой для заказчика">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+        Для заказчика
+      </button>
+      <button
+        id="resetBtn"
+        type="button"
+        class="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 active:bg-slate-200/70 text-slate-700 text-sm font-medium border border-slate-200 shadow-xs transition cursor-pointer"
+        title="Обнулить параметры заказа (ваши цены на группы сохраняются)"
+      >
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Сбросить
+      </button>
+      </div>
+    </header>
+
+    <section aria-label="Ключевые показатели" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 sm:mb-8">
+      <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-soft">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Себестоимость (1 шт.)</span>
+          <span class="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">Чистая база</span>
+        </div>
+        <div id="unitCostValue" class="text-3xl font-bold tracking-tight text-slate-900">1,86 €</div>
+        <p id="unitCostFormulaHint" class="text-xs text-slate-500 mt-1.5">
+          Материал 1,20 € + станок 0,66 €
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-900/15 p-5 shadow-soft ring-1 ring-slate-900/5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Цена 1 шт. (с опциями)</span>
+          <span id="markupBadge" class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-900 text-white">2,5×</span>
+        </div>
+        <div id="unitPriceValue" class="text-3xl font-bold tracking-tight text-slate-900">4,65 €</div>
+        <p id="unitPriceSubHint" class="text-xs text-slate-500 mt-1.5">
+          Себестоимость 1,86 € × 2,5×
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-soft">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Чистая прибыль</span>
+          <span id="marginBadge" class="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/70">60,0%</span>
+        </div>
+        <div id="orderProfitValue" class="text-3xl font-bold tracking-tight text-emerald-600">2,79 €</div>
+        <p id="orderProfitSubHint" class="text-xs text-slate-500 mt-1.5">
+          Итого за партию − прямая себестоимость
+        </p>
+      </div>
+    </section>
+
+    <section aria-label="Выбор ценовой группы пластика Bambu Lab" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft mb-6 sm:mb-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">1. Ценовая группа пластика Bambu Lab (6 категорий)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Филаменты с одинаковой ценой за грамм и ставкой работы принтера объединены в общие группы.
+          </p>
+        </div>
+
+        <div class="relative w-full md:w-96">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+          </svg>
+          <input
+            id="filamentSearchInput"
+            type="text"
+            placeholder="Найти пластик: например, Pure, Silk+, Matte, Translucent, TPU..."
+            aria-label="Найти пластик по названию"
+            class="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400 transition"
+          />
+          <button
+            id="clearSearchBtn"
+            type="button"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+            title="Очистить поиск"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="searchStatusBanner" class="hidden mb-3 px-3.5 py-2 rounded-xl bg-sky-50 border border-sky-200/80 text-xs text-sky-900 flex items-center justify-between gap-2">
+        <span id="searchStatusText">Найдено совпадение</span>
+        <span class="text-[11px] font-medium text-sky-700">Группа выбрана автоматически</span>
+      </div>
+
+      <div id="filamentGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+
+      <details id="ratesPanel" class="mt-4 rounded-2xl border border-slate-200/90 bg-slate-50/60">
+        <summary class="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-800">Мои цены на группы (катушка и станок)</summary>
+        <div class="px-4 pb-4">
+          <p class="text-xs text-slate-500 mb-3">Укажите цену катушки (1 кг или 750 г): цена за грамм пересчитается автоматически. Также можно изменить стоимость часа принтера. Группы остаются, цены сохраняются в приложении.</p>
+          <div id="ratesEditor" class="space-y-2"></div>
+          <button id="resetRatesBtn" type="button" class="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 transition cursor-pointer">Вернуть стандартные цены</button>
+        </div>
+      </details>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 sm:mb-8">
+      <section aria-label="Параметры заказа" class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+          <h2 class="text-base font-semibold text-slate-900">Параметры печати и заказа</h2>
+          <span id="activeRatesPill" class="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+            Материал: 0,020 €/г · Станок: 0,33 €/ч
+          </span>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">2. Чья катушка пластика</label>
+          <div id="spoolGroup" class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200/70" role="group" aria-label="Владелец катушки">
+            <button type="button" data-spool="mine" class="spool-btn text-left p-3 rounded-xl transition cursor-pointer bg-white text-slate-900 shadow-xs">
+              <div class="text-sm font-semibold">Свой пластик (моя катушка)</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">Учитывается цена пластика + работа принтера</div>
+            </button>
+            <button type="button" data-spool="client" class="spool-btn text-left p-3 rounded-xl transition cursor-pointer text-slate-600 hover:text-slate-900">
+              <div class="text-sm font-semibold">Пластик заказчика (0 €/г за материал)</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">Только машинное время, энергия и износ сопла</div>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between gap-4 mb-2">
+            <label for="weightNumber" class="text-sm font-medium text-slate-700">3. Вес детали (из Bambu Studio)</label>
+            <div class="flex items-center gap-1.5">
+              <input id="weightNumber" type="number" min="0" max="2000" step="1" value="60"
+                class="no-spinner w-24 px-3 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+              <span class="text-sm font-medium text-slate-500 w-6">г</span>
+            </div>
+          </div>
+          <input id="weightSlider" type="range" min="0" max="2000" step="1" value="60" aria-label="Ползунок веса детали в граммах" class="calc-slider" />
+          <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+            <span>0 г</span><span>500 г</span><span>1000 г</span><span>1500 г</span><span>2000 г</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between gap-4 mb-2">
+            <label for="hoursNumber" class="text-sm font-medium text-slate-700">4. Время печати</label>
+            <div class="flex items-center gap-1.5">
+              <input id="hoursNumber" type="number" inputmode="numeric" min="0" max="100" step="1" value="2" aria-label="Часы" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" />
+              <span class="text-sm font-medium text-slate-500">ч</span>
+              <input id="minutesNumber" type="number" inputmode="numeric" min="0" max="59" step="1" value="0" aria-label="Минуты" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" />
+              <span class="text-sm font-medium text-slate-500">мин</span>
+            </div>
+          </div>
+          <input id="hoursSlider" type="range" min="0" max="6000" step="5" value="120" aria-label="Ползунок времени печати в часах" class="calc-slider" />
+          <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+            <span>0 ч</span><span>25 ч</span><span>50 ч</span><span>75 ч</span><span>100 ч</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between gap-4 mb-2">
+            <label for="markupNumber" class="text-sm font-medium text-slate-700">5. Коэффициент наценки</label>
+            <div class="flex items-center gap-1.5">
+              <input id="markupNumber" type="number" min="1" max="5" step="0.1" value="2.5"
+                class="no-spinner w-24 px-3 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+              <span class="text-sm font-medium text-slate-500 w-6">×</span>
+            </div>
+          </div>
+          <input id="markupSlider" type="range" min="1" max="5" step="0.1" value="2.5" aria-label="Ползунок коэффициента наценки" class="calc-slider" />
+          <div class="flex justify-between text-[11px] text-slate-400 mt-1 mb-3">
+            <span>1,0×</span><span>2,0×</span><span>3,0×</span><span>4,0×</span><span>5,0×</span>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-markup="1.0" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition cursor-pointer">Себестоимость 1,0×</button>
+            <button type="button" data-markup="1.75" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition cursor-pointer">Для своих 1,75×</button>
+            <button type="button" data-markup="2.5" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-900 bg-slate-900 text-white transition cursor-pointer">Рынок 2,5×</button>
+            <button type="button" data-markup="3.0" class="preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition cursor-pointer">Сложный / срочный 3,0×</button>
+          </div>
+        </div>
+
+        <div class="pt-1 border-t border-slate-100">
+          <div class="flex items-center justify-between gap-4 mb-2">
+            <label for="qtyNumber" class="text-sm font-medium text-slate-700">6. Количество деталей в партии</label>
+            <div class="flex items-center gap-1.5">
+              <input id="qtyNumber" type="number" min="1" max="500" step="1" value="1"
+                class="no-spinner w-24 px-3 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+              <span class="text-sm font-medium text-slate-500 w-6">шт.</span>
+            </div>
+          </div>
+          <input id="qtySlider" type="range" min="1" max="500" step="1" value="1" aria-label="Ползунок количества деталей в партии" class="calc-slider" />
+          <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+            <span>1 шт.</span><span>125 шт.</span><span>250 шт.</span><span>375 шт.</span><span>500 шт.</span>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100">
+          <div class="text-sm font-medium text-slate-700 mb-3">7. Дополнительные услуги, расходы и условия</div>
+          <div class="space-y-3">
+
+            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 cursor-pointer transition">
+              <span class="flex items-start sm:items-center gap-3">
+                <input id="optAms" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+                <span>
+                  <span class="block text-sm font-medium text-slate-900">Многоцветная печать AMS</span>
+                  <span class="block text-xs text-slate-500">Отходы на башню очистки (Prime Tower) и время смен катушек</span>
+                </span>
+              </span>
+              <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">+15% к базовой цене</span>
+            </label>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-sm font-medium text-slate-900">Постобработка <span class="text-xs font-normal text-slate-500">(цена за 1 шт., можно изменить)</span></span>
+                <button type="button" data-info="post" class="info-btn shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">ⓘ Подсказка</button>
+              </div>
+              <div id="postOptions" class="space-y-1.5"></div>
+            </div>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-sm font-medium text-slate-900">3D-моделирование с нуля <span class="text-xs font-normal text-slate-500">(разово, можно изменить)</span></span>
+                <button type="button" data-info="model" class="info-btn shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">ⓘ Подсказка</button>
+              </div>
+              <div id="modelOptions" class="space-y-1.5"></div>
+            </div>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-2.5">
+              <div class="text-sm font-medium text-slate-900">Износ и расходы <span class="text-xs font-normal text-slate-500">(входят в себестоимость)</span></div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optElectric" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm text-slate-900">Электричество</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="powerW" type="number" inputmode="decimal" min="0" step="10" value="200" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> Вт ×
+                  <input id="tariff" type="number" inputmode="decimal" min="0" step="0.01" value="0.2" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> €/кВт·ч</span>
+              </div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optWear" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm text-slate-900">Износ сопла и стола</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="wearRate" type="number" inputmode="decimal" min="0" step="0.01" value="0.05" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> €/ч</span>
+              </div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optDefect" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm text-slate-900">Процент брака</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="defectPct" type="number" inputmode="decimal" min="0" step="1" value="5" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> % (обычно 5–10)</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Ставка станка в группе уже может частично включать энергию и износ. Включайте пункты, если хотите учитывать их отдельно.</p>
+            </div>
+
+            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 cursor-pointer transition">
+              <span class="flex items-start sm:items-center gap-3">
+                <input id="optDiscount" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+                <span>
+                  <span class="block text-sm font-medium text-slate-900">Скидка за партию</span>
+                  <span class="block text-xs text-slate-500">от 10 шт. −2% · от 20 шт. −3% · от 50 шт. −5% · от 100 шт. −10%. Не действует на моделирование.</span>
+                </span>
+              </span>
+              <span id="discountNow" class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">0%</span>
+            </label>
+
+            <div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+              <label class="flex items-start sm:items-center gap-3 cursor-pointer">
+                <input id="optMin" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+                <span>
+                  <span class="block text-sm font-medium text-slate-900">Минимальная цена заказа</span>
+                  <span class="block text-xs text-slate-500">Если сумма меньше, доплата до минимума</span>
+                </span>
+              </label>
+              <span class="flex items-center gap-1 text-xs text-slate-500 shrink-0"><input id="minPrice" type="number" inputmode="decimal" min="0" step="0.5" value="2" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> €</span>
+            </div>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-3">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optVat" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm font-medium text-slate-900">НДС</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="vatPct" type="number" inputmode="decimal" min="0" step="1" value="21" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> %</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <span class="text-sm font-medium text-slate-900">Валюта сметы для заказчика</span>
+                <span class="flex items-center gap-2">
+                  <select id="currencySelect" class="px-2 py-1 text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15">
+                    <option value="EUR">EUR €</option><option value="USD">USD $</option><option value="PLN">PLN zł</option><option value="UAH">UAH ₴</option><option value="GBP">GBP £</option>
+                  </select>
+                  <span id="fxWrap" class="hidden flex items-center gap-1 text-xs text-slate-500">1 € = <input id="fxInput" type="number" inputmode="decimal" min="0" step="0.01" value="1" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> <span id="fxCode"></span></span>
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400">Расчёт ведётся в €. Валюта меняет только смету для заказчика. Курс укажите актуальный.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <div class="lg:col-span-5 flex flex-col gap-6">
+        <section aria-label="Детальная разбивка" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <h2 class="text-base font-semibold text-slate-900">Детальная разбивка</h2>
+            <span id="selectedGroupShortBadge" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">Группа 1 · PLA / PETG</span>
+          </div>
+
+          <div class="mb-5">
+            <div class="w-full h-3 rounded-full bg-slate-100 overflow-hidden flex" aria-hidden="true">
+              <div id="barPlastic" class="bg-sky-500 h-full transition-all duration-150" style="width: 25%;"></div>
+              <div id="barTime" class="bg-amber-500 h-full transition-all duration-150" style="width: 15%;"></div>
+              <div id="barProfit" class="bg-emerald-500 h-full transition-all duration-150" style="width: 60%;"></div>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-2.5">
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-sky-500"></span> Пластик</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-amber-500"></span> Машинное время</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-emerald-500"></span> Прибыль и опции</span>
+            </div>
+          </div>
+
+          <dl class="space-y-2.5 text-sm">
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Материал (1 шт.) <span id="breakdownPlasticRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownPlasticVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Машинное время (1 шт.) <span id="breakdownTimeRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownTimeVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowElectric" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Электричество <span id="breakdownElectricRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownElectricVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowWear" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Износ сопла и стола <span id="breakdownWearRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownWearVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowDefect" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Брак <span id="breakdownDefectRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownDefectVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-700 font-medium">Чистая себестоимость (1 шт.)</dt><dd id="breakdownUnitCostVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Базовая печать с наценкой <span id="breakdownMarkupLabel" class="text-xs text-slate-400"></span></dt><dd id="breakdownPrintedSubtotalVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowAms" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Надбавка AMS (+15% к базовой цене)</dt><dd id="breakdownAmsVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowPostProcessing" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600"><span id="breakdownPostLabel">Постобработка</span> <span id="breakdownPostFormula" class="text-xs text-slate-400"></span></dt><dd id="breakdownPostVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowDiscount" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownDiscountLabel">Скидка за партию</dt><dd id="breakdownDiscountVal" class="font-semibold text-rose-600"></dd></div>
+            <div id="rowModeling" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownModelingLabel">3D-моделирование (разово)</dt><dd id="breakdownModelingVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowMin" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownMinLabel">Доплата до минимальной цены заказа</dt><dd id="breakdownMinVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between pt-1.5"><dt class="text-base font-semibold text-slate-900">Итого за партию</dt><dd id="breakdownBatchTotalVal" class="text-lg font-bold text-slate-900"></dd></div>
+            <div id="rowVat" class="hidden flex items-center justify-between py-1.5 border-t border-slate-100"><dt class="text-slate-600" id="breakdownVatLabel">НДС</dt><dd id="breakdownVatVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowGross" class="hidden flex items-center justify-between"><dt class="text-base font-semibold text-slate-900">К оплате с НДС</dt><dd id="breakdownGrossVal" class="text-lg font-bold text-slate-900"></dd></div>
+          </dl>
+        </section>
+
+        <section aria-label="Сводка по заказу" class="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-soft">
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="text-base font-semibold text-white">Сводка по заказу</h2>
+            <span id="batchQtyLabel" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/10 text-slate-200">1 шт.</span>
+          </div>
+          <p id="batchSummaryMeta" class="text-xs text-slate-400 mb-4">Общий вес: 60 г · Общее время: 2,0 ч · Катушка: 18–20 €/кг</p>
+
+          <div class="space-y-3">
+            <div class="flex items-baseline justify-between py-2.5 px-3.5 rounded-xl bg-white/5 border border-white/10">
+              <span class="text-xs sm:text-sm text-slate-300">Себестоимость партии</span>
+              <span id="batchCostValue" class="text-base sm:text-lg font-bold text-white">1,86 €</span>
+            </div>
+            <div class="flex items-baseline justify-between py-2.5 px-3.5 rounded-xl bg-white/5 border border-white/10">
+              <span class="text-xs sm:text-sm text-slate-300">Цена 1 шт. для заказчика</span>
+              <span id="batchUnitPriceValue" class="text-base sm:text-lg font-bold text-white">4,65 €</span>
+            </div>
+            <div class="flex items-baseline justify-between py-2.5 px-3.5 rounded-xl bg-white/10 border border-white/15">
+              <span class="text-xs sm:text-sm font-medium text-white">Итого за партию</span>
+              <span id="batchPriceValue" class="text-xl sm:text-2xl font-bold text-white">4,65 €</span>
+            </div>
+
+            <div id="rowBatchGross" class="hidden flex items-baseline justify-between py-2.5 px-3.5 rounded-xl bg-white/5 border border-white/10">
+              <span class="text-xs sm:text-sm text-slate-300">К оплате с НДС</span>
+              <span id="batchGrossValue" class="text-base sm:text-lg font-bold text-white">0,00 €</span>
+            </div>
+            <div class="flex items-baseline justify-between py-3 px-3.5 rounded-xl bg-emerald-500/15 border border-emerald-400/25">
+              <span class="text-xs sm:text-sm font-medium text-emerald-200">Чистая прибыль</span>
+              <span id="batchProfitValue" class="text-xl sm:text-2xl font-bold text-emerald-400">2,79 €</span>
+            </div>
+
+            <button id="saveHistoryBtn" type="button" class="w-full px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-sm font-medium transition cursor-pointer">Сохранить расчёт в историю</button>
+          </div>
+        </section>
+
+        <section id="materialMemoCard" aria-label="Техническая памятка Bambu Lab X2D" class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-5 shadow-soft">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span id="memoBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300/70">Bambu Lab X2D · Группа 1</span>
+            <span id="memoSpoolRef" class="text-xs font-medium text-slate-600">Катушка: 18–20 €/кг</span>
+          </div>
+          <h3 id="memoTitle" class="text-sm font-semibold text-slate-900 mb-1.5">Базовые PLA и PETG</h3>
+          <p id="memoBody" class="text-xs text-slate-700 leading-relaxed mb-2.5">Стандартные режимы Bambu Lab X2D, совместимо с AMS 2 Pro, стол 55–80 °C.</p>
+          <div id="memoTags" class="flex flex-wrap gap-1.5"></div>
+        </section>
+      </div>
+    </div>
+
+    <section aria-label="Сравнительная таблица всех 6 ценовых групп" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">Сравнение всех 6 ценовых групп Bambu Lab</h2>
+          <p id="matrixContextText" class="text-xs text-slate-500 mt-0.5">Вес: 60 г · Время: 2,0 ч · Наценка: 2,5× · Свой пластик · Партия: 1 шт.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full self-start sm:self-auto">
+          <span class="w-2 h-2 rounded-full bg-slate-900"></span>
+          Нажмите на строку, чтобы выбрать группу
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <th class="py-3 pr-4">Ценовая группа и филаменты</th>
+              <th class="py-3 px-3">Ставки (материал / станок)</th>
+              <th class="py-3 px-3 text-right">Себестоимость (1 шт.)</th>
+              <th class="py-3 px-3 text-right">Цена (1 шт.)</th>
+              <th class="py-3 px-3 text-right">Итого за партию</th>
+              <th class="py-3 pl-3 text-right">Чистая прибыль</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="historySection" aria-label="История заказов" class="mt-6 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">История заказов</h2>
+          <p id="historyCount" class="text-xs text-slate-500 mt-0.5"></p>
+        </div>
+        <input id="historySearch" type="text" placeholder="Поиск: название, заказчик, номер" class="sm:w-80 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      </div>
+      <div id="historyList" class="space-y-2"></div>
+    </section>
+
+    <section id="dataSection" aria-label="Данные и резервная копия" class="mt-6 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <h2 class="text-base font-semibold text-slate-900">Резервная копия</h2>
+      <p class="text-xs text-slate-500 mt-0.5 mb-3">В файл сохраняются ваши цены, настройки, текущий расчёт и вся история. Файл можно загрузить на другом телефоне.</p>
+      <div class="flex flex-wrap gap-2">
+        <button id="exportBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Экспорт в файл</button>
+        <button id="importBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Импорт из файла</button>
+        <input id="importFile" type="file" accept=".json,application/json" class="hidden" />
+      </div>
+    </section>
+  </div>
+
+  <div id="clientView" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div class="no-print flex items-center justify-between gap-3 mb-5">
+      <button id="backBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-200 shadow-xs transition cursor-pointer">← К расчёту</button>
+      <span class="text-xs text-slate-500 text-right">Экран для заказчика: без себестоимости и прибыли</span>
+    </div>
+
+    <div class="no-print bg-white rounded-2xl border border-slate-200/80 p-4 mb-4 space-y-3 shadow-soft">
+      <div>
+        <label for="clientTitleInput" class="block text-xs font-medium text-slate-600 mb-1">Название заказа / изделия</label>
+        <input id="clientTitleInput" type="text" maxlength="120" placeholder="Например: Корпус для датчика" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      </div>
+      <div>
+        <label for="clientNameInput" class="block text-xs font-medium text-slate-600 mb-1">Заказчик (необязательно)</label>
+        <input id="clientNameInput" type="text" maxlength="120" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      </div>
+      <div>
+        <label for="clientNoteInput" class="block text-xs font-medium text-slate-600 mb-1">Примечание (сроки, условия, необязательно)</label>
+        <textarea id="clientNoteInput" rows="2" maxlength="500" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="clientOfferInput" class="block text-xs font-medium text-slate-600 mb-1">Номер предложения</label>
+          <input id="clientOfferInput" type="text" maxlength="30" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+        </div>
+        <div>
+          <label for="validDaysInput" class="block text-xs font-medium text-slate-600 mb-1">Цена действительна, дней</label>
+          <input id="validDaysInput" type="number" inputmode="numeric" min="0" max="365" step="1" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+        </div>
+      </div>
+      <details class="rounded-lg border border-slate-200 bg-slate-50/60">
+        <summary class="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-slate-700">Данные в шапке сметы (название, e-mail, телефон)</summary>
+        <div class="px-3 pb-3 space-y-2">
+          <input id="brandNameInput" type="text" maxlength="60" placeholder="Название" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <input id="brandEmailInput" type="text" maxlength="80" placeholder="E-mail" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <input id="brandPhoneInput" type="text" maxlength="40" placeholder="Телефон (необязательно)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+        </div>
+      </details>
+    </div>
+
+    <article id="clientCard" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <div class="pb-4 border-b border-slate-200">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-slate-900 text-emerald-400 font-extrabold text-lg leading-none">3D</span>
+            <div class="leading-tight">
+              <div id="clientBrandName" class="text-base font-bold text-slate-900">SergBigUA &amp; co</div>
+              <div id="clientBrandContacts" class="text-[11px] text-slate-500 mt-0.5"></div>
+            </div>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg border-2 border-emerald-500 text-emerald-600 font-extrabold text-xs leading-none">3D</span>
+          </div>
+          <div class="text-right text-xs text-slate-500 leading-snug">
+            <div id="clientOfferNo" class="text-sm font-semibold text-slate-900"></div>
+            <div id="clientDate"></div>
+            <div id="clientValid"></div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Расчёт стоимости 3D-печати</div>
+          <h1 id="clientHeading" class="text-xl font-bold tracking-tight text-slate-900 mt-1">3D-печать на заказ</h1>
+          <p id="clientCustomer" class="hidden text-sm text-slate-600 mt-1"></p>
+        </div>
+      </div>
+      <div id="clientLines" class="divide-y divide-slate-100 text-sm"></div>
+      <div class="mt-4 pt-4 border-t-2 border-slate-900 flex items-baseline justify-between gap-3">
+        <span class="text-base font-semibold text-slate-900">Итого</span>
+        <span id="clientTotal" class="text-3xl font-bold tracking-tight text-slate-900">0,00 €</span>
+      </div>
+      <p id="clientUnitNote" class="text-xs text-slate-500 mt-1 text-right"></p>
+      <p id="clientNoteView" class="hidden mt-4 text-sm text-slate-700 whitespace-pre-line"></p>
+    </article>
+
+    <div class="no-print grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+      <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Отправить картинку</button>
+      <button id="pdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Скачать PDF</button>
+      <button id="sendPdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Отправить PDF</button>
+      <button id="saveBtn2" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Сохранить в историю</button>
+      <button id="copyBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Копировать текст</button>
+      <button id="printBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Печать</button>
+    </div>
+    <p id="clientToast" class="no-print text-xs text-emerald-700 mt-2 h-4"></p>
+  </div>
+
+  <div id="appToast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm shadow-lg text-center"></div>
+
+  <div id="infoModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 p-3">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-5">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <h3 id="infoTitle" class="text-base font-semibold text-slate-900"></h3>
+        <button id="infoClose" type="button" class="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">Закрыть</button>
+      </div>
+      <div id="infoBody" class="text-sm text-slate-700"></div>
+    </div>
+  </div>
+
+  <script>
+    const FILAMENT_GROUPS = [
+      {
+        id: 'group_1', number: 1,
+        shortName: 'Группа 1 · Базовые PLA и PETG',
+        title: 'Базовые PLA и PETG',
+        plasticRate: 0.020, printerRate: 0.33, spoolRef: '18–20 €/кг', theme: 'emerald',
+        filaments: ['PLA Basic', 'PLA Pure', 'PLA Matte', 'PETG Basic', 'PETG HF'],
+        printerNote: 'Стандартные режимы Bambu Lab X2D, совместимо с AMS 2 Pro, стол 55–80 °C.',
+      },
+      {
+        id: 'group_2', number: 2,
+        shortName: 'Группа 2 · Декоративные и полупрозрачные',
+        title: 'Декоративные и полупрозрачные PLA / PETG',
+        plasticRate: 0.025, printerRate: 0.33, spoolRef: '24–28 €/кг', theme: 'sky',
+        filaments: ['PLA Silk+', 'PLA Translucent', 'PETG Translucent', 'PLA Glow (светящийся)', 'PLA Marble', 'PLA Sparkle', 'PLA Galaxy', 'PLA Metal', 'PLA Wood', 'PLA Aero', 'PETG Matte'],
+        printerNote: 'Требуется аккуратная настройка скорости и температуры для сохранения глянца Silk+ или прозрачности Translucent; для Glow/Wood/Sparkle желательно закалённое сопло.',
+      },
+      {
+        id: 'group_3', number: 3,
+        shortName: 'Группа 3 · Инженерные без волокна',
+        title: 'Инженерные без волокна: ABS и ASA',
+        plasticRate: 0.023, printerRate: 0.38, spoolRef: '22–25 €/кг', theme: 'amber',
+        filaments: ['ABS', 'ASA'],
+        printerNote: 'Обязательна закрытая камера (прогрев 10–15 мин), стол 90–110 °C, фильтрация/проветривание от стирола.',
+      },
+      {
+        id: 'group_4', number: 4,
+        shortName: 'Группа 4 · Композиты CF / GF',
+        title: 'Композиты с угле- и стекловолокном: CF / GF',
+        plasticRate: 0.030, printerRate: 0.45, spoolRef: '30–39 €/кг', theme: 'rose',
+        filaments: ['ASA-CF', 'PETG-CF', 'PLA-CF', 'ABS-GF'],
+        printerNote: 'Только закалённое стальное сопло (Hardened Steel 0.4/0.6 мм), сушка 65–70 °C (6–8 ч), сторонние катушки подавать только через External Spool (не в AMS).',
+      },
+      {
+        id: 'group_5', number: 5,
+        shortName: 'Группа 5 · Гибкие эластомеры TPU',
+        title: 'Гибкие эластомеры TPU',
+        plasticRate: 0.035, printerRate: 0.36, spoolRef: '32–38 €/кг', theme: 'violet',
+        filaments: ['TPU 95A HF', 'TPU 85A / 90A', 'TPU for AMS'],
+        printerNote: 'Мягкие TPU (85A/90A/95A) подавать ТОЛЬКО с внешнего держателя (не в AMS!), скорость 20–35 мм/с, обязательная сушка при 60–65 °C.',
+      },
+      {
+        id: 'group_6', number: 6,
+        shortName: 'Группа 6 · Высокотемпературные PA / PC / PET-CF',
+        title: 'Высокотемпературные и силовые: PA / PC / PET-CF',
+        plasticRate: 0.055, printerRate: 0.50, spoolRef: '45–65 €/кг', theme: 'slate',
+        filaments: ['PAHT-CF', 'PA6-CF', 'PA6-GF', 'PET-CF', 'PC', 'PC FR'],
+        printerNote: 'Максимальный прогрев стола (100–110 °C) и камеры, закалённое сопло Hardened Steel, обязательная длительная сушка перед печатью и хранение в герметичном боксе.',
+      },
+    ];
+
+    const GROUPS_MAP = Object.fromEntries(FILAMENT_GROUPS.map((g) => [g.id, g]));
+
+    const EXTRAS = {
+      amsMultiplier: 1.15,
+      postPerUnit: 3.0,
+      modelingOnce: 15.0,
+    };
+
+    const POST_LEVELS = [
+      { name: 'Без постобработки' },
+      { name: 'Базовая зачистка' },
+      { name: 'Грунт + покраска в 1 цвет' },
+      { name: 'Ручная роспись + лак' },
+    ];
+    const MODEL_LEVELS = [
+      { name: 'Без моделирования' },
+      { name: 'Простейшие геометрические детали' },
+      { name: 'Базовая ставка (типовая деталь)' },
+      { name: 'Сложные детали' },
+    ];
+    const DISCOUNT_TIERS = [
+      { min: 100, pct: 10 },
+      { min: 50, pct: 5 },
+      { min: 20, pct: 3 },
+      { min: 10, pct: 2 },
+    ];
+    const CURRENCIES = { EUR: '€', USD: '$', PLN: 'zł', UAH: '₴', GBP: '£' };
+
+    const DEFAULTS = {
+      groupId: 'group_1',
+      spool: 'mine',
+      weight: 60,
+      hours: 2.0,
+      markup: 2.5,
+      qty: 1,
+      optAms: false,
+      postLevel: 0,
+      postPrices: [0, 3, 8, 18],
+      modelLevel: 0,
+      modelPrices: [0, 10, 15, 30],
+      optElectric: false, powerW: 200, tariff: 0.2,
+      optWear: false, wearRate: 0.05,
+      optDefect: false, defectPct: 5,
+      optDiscount: false,
+      optMin: false, minPrice: 2,
+      optVat: false, vatPct: 21,
+      currency: 'EUR',
+      fx: { USD: 1.15, PLN: 4.25, UAH: 48, GBP: 0.87 },
+      searchQuery: '',
+      clientTitle: '',
+      clientName: '',
+      clientNote: '',
+      brandName: 'SergBigUA & co',
+      brandEmail: 'serg140981@gmail.com',
+      brandPhone: '',
+      offerNo: '',
+      validDays: 14,
+      quoteDate: '',
+    };
+
+    const state = { ...DEFAULTS, postPrices: [...DEFAULTS.postPrices], modelPrices: [...DEFAULTS.modelPrices], fx: { ...DEFAULTS.fx } };
+
+    /* ---------- Редактируемые цены групп (цена за катушку) ---------- */
+    const RATES_KEY = 'calc3d_rates_v2';
+    const rates = {};
+
+    function defaultRates() {
+      FILAMENT_GROUPS.forEach((g) => {
+        rates[g.id] = { spoolPrice: Math.round(g.plasticRate * 1000 * 100) / 100, spoolG: 1000, printer: g.printerRate };
+      });
+    }
+    defaultRates();
+
+    function loadRates() {
+      try {
+        const raw2 = localStorage.getItem(RATES_KEY);
+        if (raw2) {
+          const r = JSON.parse(raw2);
+          FILAMENT_GROUPS.forEach((g) => {
+            const x = r && r[g.id];
+            if (!x) return;
+            if (Number.isFinite(x.spoolPrice) && x.spoolPrice >= 0) rates[g.id].spoolPrice = x.spoolPrice;
+            if (x.spoolG === 750 || x.spoolG === 1000) rates[g.id].spoolG = x.spoolG;
+            if (Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+          });
+          return;
+        }
+        const raw1 = localStorage.getItem('calc3d_rates_v1');
+        if (raw1) {
+          const r = JSON.parse(raw1);
+          FILAMENT_GROUPS.forEach((g) => {
+            const x = r && r[g.id];
+            if (!x) return;
+            if (Number.isFinite(x.plastic) && x.plastic >= 0) rates[g.id].spoolPrice = Math.round(x.plastic * 1000 * 100) / 100;
+            if (Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+          });
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    function saveRates() {
+      try { localStorage.setItem(RATES_KEY, JSON.stringify(rates)); } catch (e) { /* ignore */ }
+    }
+
+    function rateOf(group) {
+      const r = rates[group.id] || { spoolPrice: group.plasticRate * 1000, spoolG: 1000, printer: group.printerRate };
+      return { plastic: r.spoolG > 0 ? r.spoolPrice / r.spoolG : 0, printer: r.printer, spoolPrice: r.spoolPrice, spoolG: r.spoolG };
+    }
+
+    function spoolText(group) {
+      const r = rateOf(group);
+      const price = Math.abs(r.spoolPrice % 1) < 0.001 ? String(Math.round(r.spoolPrice)) : formatNum(r.spoolPrice, 2);
+      return `${price} € / ${r.spoolG >= 1000 ? '1 кг' : r.spoolG + ' г'}`;
+    }
+
+    /* ---------- Сохранение настроек между запусками ---------- */
+    const STORAGE_KEY = 'calc3d_state_v1';
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        applyState(JSON.parse(raw));
+      } catch (e) { /* ignore */ }
+    }
+
+    function applyState(s) {
+      try {
+        if (!s || typeof s !== 'object') return;
+        if (GROUPS_MAP[s.groupId]) state.groupId = s.groupId;
+        if (s.spool === 'mine' || s.spool === 'client') state.spool = s.spool;
+        if (Number.isFinite(s.weight)) state.weight = Math.min(2000, Math.max(0, Math.round(s.weight)));
+        if (Number.isFinite(s.hours)) state.hours = Math.min(100, Math.max(0, Math.round(s.hours * 60) / 60));
+        if (Number.isFinite(s.markup)) state.markup = Math.min(5, Math.max(1, s.markup));
+        if (Number.isFinite(s.qty)) state.qty = Math.min(500, Math.max(1, Math.round(s.qty)));
+        state.optAms = !!s.optAms;
+        if (Number.isInteger(s.postLevel) && s.postLevel >= 0 && s.postLevel <= 3) state.postLevel = s.postLevel;
+        else if (s.optPost) state.postLevel = 1;
+        if (Number.isInteger(s.modelLevel) && s.modelLevel >= 0 && s.modelLevel <= 3) state.modelLevel = s.modelLevel;
+        else if (s.optModeling) state.modelLevel = 2;
+        const okArr = (a) => Array.isArray(a) && a.length === 4 && a.every((x) => Number.isFinite(x) && x >= 0);
+        if (okArr(s.postPrices)) state.postPrices = [0, s.postPrices[1], s.postPrices[2], s.postPrices[3]];
+        if (okArr(s.modelPrices)) state.modelPrices = [0, s.modelPrices[1], s.modelPrices[2], s.modelPrices[3]];
+        ['optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((k) => { state[k] = !!s[k]; });
+        [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100]].forEach(([k, lo, hi]) => {
+          if (Number.isFinite(s[k])) state[k] = Math.min(hi, Math.max(lo, s[k]));
+        });
+        if (s.currency && CURRENCIES[s.currency]) state.currency = s.currency;
+        if (s.fx && typeof s.fx === 'object') {
+          Object.keys(state.fx).forEach((k) => { if (Number.isFinite(s.fx[k]) && s.fx[k] > 0) state.fx[k] = s.fx[k]; });
+        }
+        if (typeof s.clientTitle === 'string') state.clientTitle = s.clientTitle.slice(0, 120);
+        if (typeof s.clientName === 'string') state.clientName = s.clientName.slice(0, 120);
+        if (typeof s.clientNote === 'string') state.clientNote = s.clientNote.slice(0, 500);
+        if (typeof s.brandName === 'string') state.brandName = s.brandName.slice(0, 60);
+        if (typeof s.brandEmail === 'string') state.brandEmail = s.brandEmail.slice(0, 80);
+        if (typeof s.brandPhone === 'string') state.brandPhone = s.brandPhone.slice(0, 40);
+        if (typeof s.offerNo === 'string') state.offerNo = s.offerNo.slice(0, 30);
+        if (Number.isFinite(s.validDays)) state.validDays = Math.min(365, Math.max(0, Math.round(s.validDays)));
+        if (typeof s.quoteDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.quoteDate)) state.quoteDate = s.quoteDate;
+        else if (s.quoteDate === '') state.quoteDate = '';
+      } catch (e) { /* хранилище недоступно — используем значения по умолчанию */ }
+    }
+
+    function saveState() {
+      try {
+        const { searchQuery, ...rest } = state;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+      } catch (e) { /* ignore */ }
+    }
+
+    function formatEuro(val, decimals = 2) {
+      const safe = Number.isFinite(val) ? val : 0;
+      return `${safe.toFixed(decimals).replace('.', ',')} €`;
+    }
+
+    function formatNum(val, decimals = 3) {
+      const safe = Number.isFinite(val) ? val : 0;
+      return safe.toFixed(decimals).replace('.', ',');
+    }
+
+    function formatHours(hours) {
+      const t = Math.round((Number.isFinite(hours) ? hours : 0) * 60);
+      const h = Math.floor(t / 60);
+      const m = t % 60;
+      if (h === 0) return `${m} мин`;
+      return m === 0 ? `${h} ч` : `${h} ч ${m} мин`;
+    }
+
+    function formatMarkup(mult) {
+      const safe = Number.isFinite(mult) ? mult : 1;
+      const decimals = Math.abs((safe * 100) % 10) > 0.01 ? 2 : 1;
+      return `${safe.toFixed(decimals).replace('.', ',')}×`;
+    }
+
+    function clampStep(val, min, max, step) {
+      let n = Number(val);
+      if (!Number.isFinite(n)) return min;
+      n = Math.min(max, Math.max(min, n));
+      const inv = 1 / step;
+      n = Math.round(n * inv) / inv;
+      return Math.min(max, Math.max(min, Number(n.toFixed(4))));
+    }
+
+    function discountForQty(q) {
+      for (const t of DISCOUNT_TIERS) if (q >= t.min) return t.pct;
+      return 0;
+    }
+
+    function calculateForGroup(group, params) {
+      const rt = rateOf(group);
+      const effectivePlasticRate = params.spool === 'client' ? 0 : rt.plastic;
+      const printerRate = rt.printer;
+
+      const plasticCostUnit = params.weight * effectivePlasticRate;
+      const machineCostUnit = params.hours * printerRate;
+      const electricCostUnit = params.optElectric ? params.hours * (params.powerW / 1000) * params.tariff : 0;
+      const wearCostUnit = params.optWear ? params.hours * params.wearRate : 0;
+      const baseUnit = plasticCostUnit + machineCostUnit + electricCostUnit + wearCostUnit;
+      const defectCostUnit = params.optDefect ? (baseUnit * params.defectPct) / 100 : 0;
+      const unitCost = baseUnit + defectCostUnit;
+      const batchDirectCost = unitCost * params.qty;
+
+      const printedUnitPrice = unitCost * params.markup;
+      const printedBatchSubtotal = printedUnitPrice * params.qty;
+      const amsSurcharge = params.optAms ? printedBatchSubtotal * (EXTRAS.amsMultiplier - 1) : 0;
+      const postUnitPrice = params.postLevel > 0 ? params.postPrices[params.postLevel] : 0;
+      const postBatchCost = postUnitPrice * params.qty;
+      const modelingBatchCost = params.modelLevel > 0 ? params.modelPrices[params.modelLevel] : 0;
+
+      const perPieceSum = printedBatchSubtotal + amsSurcharge + postBatchCost;
+      const discountPct = params.optDiscount ? discountForQty(params.qty) : 0;
+      const discountAmount = (perPieceSum * discountPct) / 100;
+      const beforeMin = perPieceSum - discountAmount + modelingBatchCost;
+      const minTopUp = params.optMin && beforeMin < params.minPrice ? params.minPrice - beforeMin : 0;
+
+      const batchTotalPrice = beforeMin + minTopUp;
+      const vatAmount = params.optVat ? (batchTotalPrice * params.vatPct) / 100 : 0;
+      const grossTotal = batchTotalPrice + vatAmount;
+      const unitFinalPrice = params.qty > 0 ? batchTotalPrice / params.qty : 0;
+
+      const orderProfit = batchTotalPrice - batchDirectCost;
+      const marginPct = batchTotalPrice > 0 ? (orderProfit / batchTotalPrice) * 100 : 0;
+
+      return {
+        group, effectivePlasticRate, printerRate, plasticCostUnit, machineCostUnit, electricCostUnit, wearCostUnit,
+        defectCostUnit, unitCost, batchDirectCost, printedUnitPrice, printedBatchSubtotal, amsSurcharge,
+        postUnitPrice, postBatchCost, modelingBatchCost, discountPct, discountAmount, minTopUp,
+        batchTotalPrice, vatAmount, grossTotal, unitFinalPrice, orderProfit, marginPct,
+      };
+    }
+
+    function evaluateSearch(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        return { active: false, matchedGroupIds: new Set(), matchedFilaments: [] };
+      }
+
+      const matchedGroupIds = new Set();
+      const matchedFilaments = [];
+
+      FILAMENT_GROUPS.forEach((group) => {
+        const groupTitleMatch = group.title.toLowerCase().includes(q);
+        let groupHasMatch = groupTitleMatch;
+
+        group.filaments.forEach((fil) => {
+          if (fil.toLowerCase().includes(q)) {
+            groupHasMatch = true;
+            matchedFilaments.push({ groupId: group.id, groupNumber: group.number, filament: fil });
+          }
+        });
+
+        if (groupHasMatch) matchedGroupIds.add(group.id);
+      });
+
+      return { active: true, matchedGroupIds, matchedFilaments };
+    }
+
+    function renderFilamentGroupCards() {
+      const grid = document.getElementById('filamentGroupsGrid');
+      const searchRes = evaluateSearch(state.searchQuery);
+      const q = state.searchQuery.trim().toLowerCase();
+
+      const searchBanner = document.getElementById('searchStatusBanner');
+      const searchStatusText = document.getElementById('searchStatusText');
+      if (searchRes.active) {
+        searchBanner.classList.remove('hidden');
+        if (searchRes.matchedGroupIds.size > 0) {
+          const previewList = searchRes.matchedFilaments
+            .slice(0, 4)
+            .map((m) => `${m.filament} (Группа ${m.groupNumber})`)
+            .join(', ');
+          searchStatusText.textContent = previewList
+            ? `Совпадения: ${previewList}${searchRes.matchedFilaments.length > 4 ? '…' : ''}`
+            : `Найдено групп: ${searchRes.matchedGroupIds.size}`;
+        } else {
+          searchStatusText.textContent = `По запросу «${state.searchQuery.trim()}» точных совпадений не найдено`;
+        }
+      } else {
+        searchBanner.classList.add('hidden');
+      }
+
+      grid.innerHTML = '';
+
+      FILAMENT_GROUPS.forEach((group) => {
+        const isSelected = group.id === state.groupId;
+        const isSearchMatch = searchRes.active && searchRes.matchedGroupIds.has(group.id);
+        const isDimmed = searchRes.active && !isSearchMatch && !isSelected;
+
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+
+        let cardClasses = 'text-left p-3.5 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-2.5 ';
+        if (isSelected) {
+          cardClasses += 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/15';
+        } else if (isSearchMatch) {
+          cardClasses += 'bg-sky-50/70 text-slate-900 border-sky-400 ring-2 ring-sky-400/20 hover:bg-sky-50';
+        } else if (isDimmed) {
+          cardClasses += 'bg-slate-50/60 text-slate-500 border-slate-200/70 opacity-55 hover:opacity-90';
+        } else {
+          cardClasses += 'bg-slate-50/60 hover:bg-slate-100/80 text-slate-900 border-slate-200/90';
+        }
+        card.className = cardClasses;
+
+        card.addEventListener('click', () => {
+          state.groupId = group.id;
+          render();
+        });
+
+        const badgesHtml = group.filaments
+          .map((fil) => {
+            const filMatches = q && fil.toLowerCase().includes(q);
+            let badgeClass = 'inline-block text-[11px] font-medium px-2 py-0.5 rounded-md ';
+            if (isSelected) {
+              badgeClass += filMatches ? 'bg-emerald-400 text-slate-950 font-semibold' : 'bg-white/15 text-slate-100';
+            } else if (filMatches) {
+              badgeClass += 'bg-sky-600 text-white font-semibold';
+            } else {
+              badgeClass += 'bg-white text-slate-700 border border-slate-200/80';
+            }
+            return `<span class="${badgeClass}">${fil}</span>`;
+          })
+          .join('');
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <span class="text-[11px] font-semibold uppercase tracking-wider ${isSelected ? 'text-slate-300' : 'text-slate-500'}">
+                Группа ${group.number} · ${spoolText(group)}
+              </span>
+              ${isSelected ? '<span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950">Выбрано</span>' : ''}
+            </div>
+            <div class="text-sm font-semibold leading-snug ${isSelected ? 'text-white' : 'text-slate-900'}">
+              ${group.title}
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1">${badgesHtml}</div>
+          <div class="pt-2 border-t ${isSelected ? 'border-white/15 text-slate-200' : 'border-slate-200/70 text-slate-700'} flex items-center justify-between text-xs font-semibold">
+            <span>${formatNum(rateOf(group).plastic, 3)} €/г</span>
+            <span>${formatNum(rateOf(group).printer, 2)} €/ч</span>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function renderTechnicalReminder(group) {
+      const card = document.getElementById('materialMemoCard');
+      const badge = document.getElementById('memoBadge');
+      const spoolRef = document.getElementById('memoSpoolRef');
+      const title = document.getElementById('memoTitle');
+      const body = document.getElementById('memoBody');
+      const tags = document.getElementById('memoTags');
+
+      const themeStyles = {
+        emerald: {
+          card: 'bg-emerald-50/75 border border-emerald-200/90 rounded-2xl p-5 shadow-soft',
+          badge: 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300/70',
+        },
+        sky: {
+          card: 'bg-sky-50/75 border border-sky-200/90 rounded-2xl p-5 shadow-soft',
+          badge: 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-sky-100 text-sky-900 border border-sky-300/70',
+        },
+        amber: {
+          card: 'bg-amber-50/75 border border-amber-200/90 rounded-2xl p-5 shadow-soft',
+          badge: 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/70',
+        },
+        rose: {
+          card: 'bg-rose-50/75 border border-rose-200/90 rounded-2xl p-5 shadow-soft',
+          badge: 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-rose-100 text-rose-900 border border-rose-300/70',
+        },
+        violet: {
+          card: 'bg-violet-50/75 border border-violet-200/90 rounded-2xl p-5 shadow-soft',
+          badge: 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-violet-100 text-violet-900 border border-violet-300/70',
+        },
+        slate: {
+          card: 'bg-slate-100/90 border border-slate-300/90 rounded-2xl p-5 shadow-soft',
+          badge: 'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-800 text-white',
+        },
+      };
+
+      const style = themeStyles[group.theme] || themeStyles.emerald;
+      card.className = style.card;
+      badge.className = style.badge;
+
+      badge.textContent = `Памятка Bambu Lab X2D · Группа ${group.number}`;
+      spoolRef.textContent = `Катушка: ${spoolText(group)}`;
+      title.textContent = group.title;
+      body.textContent = group.printerNote;
+
+      tags.innerHTML = group.filaments
+        .map((fil) => `<span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/90 text-slate-700 border border-slate-200/80">${fil}</span>`)
+        .join('');
+    }
+
+    function syncInputsUI() {
+      document.querySelectorAll('.spool-btn').forEach((btn) => {
+        const isActive = btn.dataset.spool === state.spool;
+        btn.className = isActive
+          ? 'spool-btn text-left p-3 rounded-xl transition cursor-pointer bg-white text-slate-900 shadow-xs ring-1 ring-slate-900/10'
+          : 'spool-btn text-left p-3 rounded-xl transition cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-white/50';
+      });
+
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        const val = Number(btn.dataset.markup);
+        const isActive = Math.abs(state.markup - val) < 0.001;
+        btn.className = isActive
+          ? 'preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-900 bg-slate-900 text-white transition cursor-pointer'
+          : 'preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition cursor-pointer';
+      });
+
+      document.getElementById('weightSlider').value = state.weight;
+      document.getElementById('weightNumber').value = state.weight;
+
+      const totalMin = Math.round(state.hours * 60);
+      document.getElementById('hoursSlider').value = totalMin;
+      document.getElementById('hoursNumber').value = Math.floor(totalMin / 60);
+      document.getElementById('minutesNumber').value = totalMin % 60;
+
+      document.getElementById('markupSlider').value = state.markup;
+      document.getElementById('markupNumber').value = state.markup;
+
+      document.getElementById('qtySlider').value = state.qty;
+      document.getElementById('qtyNumber').value = state.qty;
+
+      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((id) => {
+        document.getElementById(id).checked = state[id];
+      });
+      [['powerW'], ['tariff'], ['wearRate'], ['defectPct'], ['minPrice'], ['vatPct']].forEach(([k]) => {
+        const el = document.getElementById(k);
+        if (el.value === '' || Number(el.value) !== state[k]) el.value = state[k];
+      });
+      document.getElementById('currencySelect').value = state.currency;
+      document.getElementById('fxWrap').classList.toggle('hidden', state.currency === 'EUR');
+      document.getElementById('fxCode').textContent = state.currency;
+      if (state.currency !== 'EUR') document.getElementById('fxInput').value = state.fx[state.currency];
+      renderServiceOptions();
+
+      const searchInput = document.getElementById('filamentSearchInput');
+      if (searchInput.value !== state.searchQuery) {
+        searchInput.value = state.searchQuery;
+      }
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote'], ['clientOfferInput', 'offerNo'], ['validDaysInput', 'validDays'], ['brandNameInput', 'brandName'], ['brandEmailInput', 'brandEmail'], ['brandPhoneInput', 'brandPhone']].forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el && String(el.value) !== String(state[key])) el.value = state[key];
+      });
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (state.searchQuery.trim().length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+    }
+
+    function updateCalculationsOnly() {
+      const activeGroup = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
+      const res = calculateForGroup(activeGroup, state);
+      const $ = (id) => document.getElementById(id);
+      const show = (id, on) => $(id).classList.toggle('hidden', !on);
+
+      $('activeRatesPill').textContent =
+        `Материал: ${formatNum(res.effectivePlasticRate, 4)} €/г · Станок: ${formatNum(res.printerRate, 2)} €/ч`;
+      $('selectedGroupShortBadge').textContent = activeGroup.shortName;
+
+      $('unitCostValue').textContent = formatEuro(res.unitCost);
+      $('unitCostFormulaHint').textContent =
+        `Материал ${formatEuro(res.plasticCostUnit)} + станок ${formatEuro(res.machineCostUnit)}` +
+        (res.electricCostUnit + res.wearCostUnit + res.defectCostUnit > 0 ? ' + расходы' : '');
+
+      $('markupBadge').textContent = formatMarkup(state.markup);
+      $('unitPriceValue').textContent = formatEuro(res.unitFinalPrice);
+
+      const hasAnyExtra = state.optAms || state.postLevel > 0 || state.modelLevel > 0 || res.discountPct > 0 || res.minTopUp > 0;
+      $('unitPriceSubHint').textContent = hasAnyExtra
+        ? 'С учётом выбранных дополнительных услуг'
+        : `Себестоимость ${formatEuro(res.unitCost)} × ${formatMarkup(state.markup)}`;
+
+      $('orderProfitValue').textContent = formatEuro(res.orderProfit);
+      $('marginBadge').textContent = `${formatNum(res.marginPct, 1)}%`;
+
+      // Разбивка
+      $('breakdownPlasticRate').textContent = `(${state.weight} г × ${formatNum(res.effectivePlasticRate, 4)} €/г)`;
+      $('breakdownPlasticVal').textContent = formatEuro(res.plasticCostUnit);
+      $('breakdownTimeRate').textContent = `(${formatHours(state.hours)} × ${formatNum(res.printerRate, 2)} €/ч)`;
+      $('breakdownTimeVal').textContent = formatEuro(res.machineCostUnit);
+
+      show('rowElectric', state.optElectric);
+      $('breakdownElectricRate').textContent = `(${formatHours(state.hours)} × ${state.powerW} Вт × ${formatNum(state.tariff, 2)} €/кВт·ч)`;
+      $('breakdownElectricVal').textContent = formatEuro(res.electricCostUnit);
+      show('rowWear', state.optWear);
+      $('breakdownWearRate').textContent = `(${formatHours(state.hours)} × ${formatNum(state.wearRate, 2)} €/ч)`;
+      $('breakdownWearVal').textContent = formatEuro(res.wearCostUnit);
+      show('rowDefect', state.optDefect);
+      $('breakdownDefectRate').textContent = `(+${formatNum(state.defectPct, 1)}%)`;
+      $('breakdownDefectVal').textContent = formatEuro(res.defectCostUnit);
+
+      $('breakdownUnitCostVal').textContent = formatEuro(res.unitCost);
+      $('breakdownMarkupLabel').textContent = `(${formatMarkup(state.markup)} × ${state.qty} шт.)`;
+      $('breakdownPrintedSubtotalVal').textContent = formatEuro(res.printedBatchSubtotal);
+
+      show('rowAms', state.optAms);
+      $('breakdownAmsVal').textContent = `+${formatEuro(res.amsSurcharge)}`;
+
+      show('rowPostProcessing', state.postLevel > 0);
+      $('breakdownPostLabel').textContent = `Постобработка: ${POST_LEVELS[state.postLevel].name}`;
+      $('breakdownPostFormula').textContent = `(${formatEuro(res.postUnitPrice)} × ${state.qty} шт.)`;
+      $('breakdownPostVal').textContent = `+${formatEuro(res.postBatchCost)}`;
+
+      show('rowDiscount', res.discountPct > 0);
+      $('breakdownDiscountLabel').textContent = `Скидка за партию (−${res.discountPct}%, ${state.qty} шт.)`;
+      $('breakdownDiscountVal').textContent = `−${formatEuro(res.discountAmount)}`;
+      $('discountNow').textContent = state.optDiscount ? `−${discountForQty(state.qty)}%` : '0%';
+
+      show('rowModeling', state.modelLevel > 0);
+      $('breakdownModelingLabel').textContent = `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name} (разово)`;
+      $('breakdownModelingVal').textContent = `+${formatEuro(res.modelingBatchCost)}`;
+
+      show('rowMin', res.minTopUp > 0);
+      $('breakdownMinLabel').textContent = `Доплата до минимальной цены заказа (${formatEuro(state.minPrice)})`;
+      $('breakdownMinVal').textContent = `+${formatEuro(res.minTopUp)}`;
+
+      $('breakdownBatchTotalVal').textContent = formatEuro(res.batchTotalPrice);
+      show('rowVat', state.optVat);
+      $('breakdownVatLabel').textContent = `НДС ${formatNum(state.vatPct, 1)}%`;
+      $('breakdownVatVal').textContent = `+${formatEuro(res.vatAmount)}`;
+      show('rowGross', state.optVat);
+      $('breakdownGrossVal').textContent = formatEuro(res.grossTotal);
+
+      // Полоса пропорций
+      const denom = res.batchTotalPrice > 0 ? res.batchTotalPrice : 1;
+      const totalPlastic = res.plasticCostUnit * state.qty;
+      const totalMachine = (res.machineCostUnit + res.electricCostUnit + res.wearCostUnit + res.defectCostUnit) * state.qty;
+      const pPct = Math.max(0, Math.min(100, (totalPlastic / denom) * 100));
+      const tPct = Math.max(0, Math.min(100 - pPct, (totalMachine / denom) * 100));
+      const mPct = Math.max(0, 100 - pPct - tPct);
+      $('barPlastic').style.width = `${pPct}%`;
+      $('barTime').style.width = `${tPct}%`;
+      $('barProfit').style.width = `${mPct}%`;
+
+      // Сводка
+      $('batchQtyLabel').textContent = `${state.qty} шт.`;
+      $('batchSummaryMeta').textContent =
+        `Общий вес: ${(state.weight * state.qty).toLocaleString('ru-RU')} г · Общее время: ${formatHours(state.hours * state.qty)} · Катушка: ${spoolText(activeGroup)}`;
+      $('batchCostValue').textContent = formatEuro(res.batchDirectCost);
+      $('batchUnitPriceValue').textContent = formatEuro(res.unitFinalPrice);
+      $('batchPriceValue').textContent = formatEuro(res.batchTotalPrice);
+      show('rowBatchGross', state.optVat);
+      $('batchGrossValue').textContent = formatEuro(res.grossTotal);
+      $('batchProfitValue').textContent = formatEuro(res.orderProfit);
+
+      renderTechnicalReminder(activeGroup);
+
+      const spoolLabel = state.spool === 'client' ? 'Пластик заказчика (0 €/г)' : 'Свой пластик';
+      const extrasList = [];
+      if (state.optAms) extrasList.push('AMS +15%');
+      if (state.postLevel > 0) extrasList.push('постобработка');
+      if (state.modelLevel > 0) extrasList.push('моделирование');
+      if (state.optElectric || state.optWear || state.optDefect) extrasList.push('расходы');
+      if (res.discountPct > 0) extrasList.push(`скидка ${res.discountPct}%`);
+      if (state.optMin) extrasList.push('мин. цена');
+      if (state.optVat) extrasList.push('НДС');
+      const extrasSuffix = extrasList.length ? ` · Опции: ${extrasList.join(', ')}` : '';
+      $('matrixContextText').textContent =
+        `Вес: ${state.weight} г · Время: ${formatHours(state.hours)} · Наценка: ${formatMarkup(state.markup)} · ${spoolLabel} · Партия: ${state.qty} шт.${extrasSuffix}`;
+
+      const tbody = $('comparisonTableBody');
+      tbody.innerHTML = '';
+      FILAMENT_GROUPS.forEach((grp) => {
+        const item = calculateForGroup(grp, state);
+        const isSelected = grp.id === state.groupId;
+        const tr = document.createElement('tr');
+        tr.className = isSelected ? 'bg-slate-900/[0.045] font-medium cursor-pointer' : 'hover:bg-slate-50/90 transition cursor-pointer';
+        tr.addEventListener('click', () => { state.groupId = grp.id; render(); });
+        const previewFilaments = grp.filaments.slice(0, 5).join(', ') + (grp.filaments.length > 5 ? ` +${grp.filaments.length - 5}` : '');
+        tr.innerHTML = `
+          <td class="py-3.5 pr-4">
+            <div class="flex items-start gap-2.5">
+              <span class="mt-1.5 w-2.5 h-2.5 shrink-0 rounded-full ${isSelected ? 'bg-slate-900' : 'bg-slate-300'}"></span>
+              <div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-slate-900 font-semibold">Группа ${grp.number} · ${grp.title}</span>
+                  ${isSelected ? '<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-900 text-white">Выбрано</span>' : ''}
+                </div>
+                <div class="text-xs text-slate-500 mt-0.5">${previewFilaments}</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-3 text-xs text-slate-600 whitespace-nowrap">
+            <div>${formatNum(item.effectivePlasticRate, 3)} €/г · ${formatNum(item.printerRate, 2)} €/ч</div>
+            <div class="text-[11px] text-slate-400">Катушка: ${spoolText(grp)}</div>
+          </td>
+          <td class="py-3.5 px-3 text-right text-slate-700 whitespace-nowrap">${formatEuro(item.unitCost)}</td>
+          <td class="py-3.5 px-3 text-right text-slate-900 font-semibold whitespace-nowrap">${formatEuro(item.unitFinalPrice)}</td>
+          <td class="py-3.5 px-3 text-right text-slate-900 font-bold whitespace-nowrap">${formatEuro(item.batchTotalPrice)}</td>
+          <td class="py-3.5 pl-3 text-right text-emerald-600 font-semibold whitespace-nowrap">${formatEuro(item.orderProfit)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        const val = Number(btn.dataset.markup);
+        const isActive = Math.abs(state.markup - val) < 0.001;
+        btn.className = isActive
+          ? 'preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-900 bg-slate-900 text-white transition cursor-pointer'
+          : 'preset-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition cursor-pointer';
+      });
+
+      renderClientView();
+      saveState();
+    }
+
+    function render() {
+      syncInputsUI();
+      renderFilamentGroupCards();
+      updateCalculationsOnly();
+    }
+
+    function bindEvents() {
+      const searchInput = document.getElementById('filamentSearchInput');
+      const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+      searchInput.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        const searchRes = evaluateSearch(state.searchQuery);
+        if (searchRes.active && searchRes.matchedGroupIds.size > 0) {
+          if (!searchRes.matchedGroupIds.has(state.groupId)) {
+            state.groupId = Array.from(searchRes.matchedGroupIds)[0];
+          }
+        }
+        render();
+      });
+
+      clearSearchBtn.addEventListener('click', () => {
+        state.searchQuery = '';
+        render();
+        searchInput.focus();
+      });
+
+      document.querySelectorAll('.spool-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.spool = btn.dataset.spool;
+          render();
+        });
+      });
+
+      const weightSlider = document.getElementById('weightSlider');
+      const weightNumber = document.getElementById('weightNumber');
+      weightSlider.addEventListener('input', (e) => {
+        state.weight = clampStep(e.target.value, 0, 2000, 1);
+        render();
+      });
+      weightNumber.addEventListener('input', (e) => {
+        if (e.target.value === '') return;
+        const n = Number(e.target.value);
+        if (Number.isFinite(n)) {
+          state.weight = Math.min(2000, Math.max(0, Math.round(n)));
+          weightSlider.value = state.weight;
+          updateCalculationsOnly();
+        }
+      });
+      weightNumber.addEventListener('change', (e) => {
+        state.weight = clampStep(e.target.value, 0, 2000, 1);
+        render();
+      });
+
+      const hoursSlider = document.getElementById('hoursSlider');
+      const hoursNumber = document.getElementById('hoursNumber');
+      const minutesNumber = document.getElementById('minutesNumber');
+      const setTotalMinutes = (t) => {
+        const v = Math.min(6000, Math.max(0, Math.round(t)));
+        state.hours = v / 60;
+      };
+      hoursSlider.addEventListener('input', (e) => {
+        setTotalMinutes(Number(e.target.value));
+        render();
+      });
+      const onHM = () => {
+        const h = parseInt(hoursNumber.value, 10);
+        const m = parseInt(minutesNumber.value, 10);
+        setTotalMinutes((Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0));
+        hoursSlider.value = Math.round(state.hours * 60);
+        updateCalculationsOnly();
+      };
+      hoursNumber.addEventListener('input', onHM);
+      minutesNumber.addEventListener('input', onHM);
+      hoursNumber.addEventListener('change', () => { onHM(); render(); });
+      minutesNumber.addEventListener('change', () => { onHM(); render(); });
+
+      const markupSlider = document.getElementById('markupSlider');
+      const markupNumber = document.getElementById('markupNumber');
+      markupSlider.addEventListener('input', (e) => {
+        state.markup = clampStep(e.target.value, 1.0, 5.0, 0.1);
+        render();
+      });
+      markupNumber.addEventListener('input', (e) => {
+        if (e.target.value === '') return;
+        const n = Number(String(e.target.value).replace(',', '.'));
+        if (Number.isFinite(n)) {
+          state.markup = Math.min(5.0, Math.max(1.0, Math.round(n * 100) / 100));
+          markupSlider.value = clampStep(state.markup, 1.0, 5.0, 0.1);
+          updateCalculationsOnly();
+        }
+      });
+      markupNumber.addEventListener('change', (e) => {
+        const raw = String(e.target.value).replace(',', '.');
+        state.markup = clampStep(raw, 1.0, 5.0, 0.05);
+        render();
+      });
+
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.markup = clampStep(btn.dataset.markup, 1.0, 5.0, 0.05);
+          render();
+        });
+      });
+
+      const qtySlider = document.getElementById('qtySlider');
+      const qtyNumber = document.getElementById('qtyNumber');
+      qtySlider.addEventListener('input', (e) => {
+        state.qty = clampStep(e.target.value, 1, 500, 1);
+        render();
+      });
+      qtyNumber.addEventListener('input', (e) => {
+        if (e.target.value === '') return;
+        const n = Number(e.target.value);
+        if (Number.isFinite(n)) {
+          state.qty = Math.min(500, Math.max(1, Math.round(n)));
+          qtySlider.value = state.qty;
+          updateCalculationsOnly();
+        }
+      });
+      qtyNumber.addEventListener('change', (e) => {
+        state.qty = clampStep(e.target.value, 1, 500, 1);
+        render();
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        Object.assign(state, {
+          groupId: 'group_1', spool: 'mine', weight: 0, hours: 0, markup: 2.5, qty: 1,
+          optAms: false, postLevel: 0, modelLevel: 0,
+          optElectric: false, optWear: false, optDefect: false, optDiscount: false, optMin: false, optVat: false,
+          searchQuery: '', clientTitle: '', clientName: '', clientNote: '', offerNo: '', quoteDate: '',
+        });
+        render();
+      });
+    }
+
+    /* ---------- Редактор цен групп ---------- */
+    function rateCalcText(r) {
+      return `= ${formatNum(r.spoolG > 0 ? r.spoolPrice / r.spoolG : 0, 4)} €/г`;
+    }
+
+    function renderRateEditor() {
+      const box = document.getElementById('ratesEditor');
+      const inputCls = 'no-spinner w-20 px-2.5 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400';
+      box.innerHTML = FILAMENT_GROUPS.map((g) => {
+        const r = rates[g.id];
+        return `
+          <div class="p-2.5 rounded-xl bg-white border border-slate-200/80 space-y-2">
+            <div class="text-xs font-semibold text-slate-800">Группа ${g.number} · ${g.title}</div>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500">
+              <span class="flex items-center gap-1.5">Катушка
+                <input type="number" inputmode="decimal" min="0" step="0.5" value="${r.spoolPrice}" data-group="${g.id}" data-kind="spoolPrice" class="${inputCls}" aria-label="Цена катушки, €, группа ${g.number}" /> €
+                <select data-group="${g.id}" data-kind="spoolG" class="px-2 py-1.5 text-sm bg-white border border-slate-200 rounded-lg" aria-label="Размер катушки, группа ${g.number}">
+                  <option value="1000" ${r.spoolG === 1000 ? 'selected' : ''}>1 кг</option>
+                  <option value="750" ${r.spoolG === 750 ? 'selected' : ''}>750 г</option>
+                </select>
+              </span>
+              <span id="rateCalc_${g.id}" class="font-medium text-slate-700">${rateCalcText(r)}</span>
+              <span class="flex items-center gap-1.5">Станок
+                <input type="number" inputmode="decimal" min="0" step="0.01" value="${r.printer}" data-group="${g.id}" data-kind="printer" class="${inputCls}" aria-label="Стоимость часа принтера, €/ч, группа ${g.number}" /> €/ч
+              </span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    /* ---------- Номер предложения ---------- */
+    const SEQ_KEY = 'calc3d_seq_v1';
+    const HIST_KEY = 'calc3d_history_v1';
+
+    function getSeq() {
+      try { const n = parseInt(localStorage.getItem(SEQ_KEY), 10); return Number.isFinite(n) && n > 0 ? n : 1; } catch (e) { return 1; }
+    }
+    function setSeq(n) { try { localStorage.setItem(SEQ_KEY, String(n)); } catch (e) { /* ignore */ } }
+    function autoOfferNo() { return `КП-${new Date().getFullYear()}-${String(getSeq()).padStart(3, '0')}`; }
+    function effectiveOfferNo() { return state.offerNo.trim() || autoOfferNo(); }
+
+    /* ---------- История заказов ---------- */
+    function getHistory() {
+      try {
+        const h = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+        return Array.isArray(h) ? h : [];
+      } catch (e) { return []; }
+    }
+    function setHistory(h) {
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 300))); }
+      catch (e) { showToast('Не удалось сохранить: нет места в памяти'); }
+    }
+    function isoDate(ts) {
+      const d = new Date(ts);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function esc(t) {
+      return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    function saveToHistory() {
+      const { grand } = clientData();
+      const no = effectiveOfferNo();
+      const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
+      const snap = JSON.parse(JSON.stringify(state));
+      ['searchQuery', 'brandName', 'brandEmail', 'brandPhone', 'validDays'].forEach((k) => delete snap[k]);
+      snap.offerNo = no;
+      const entry = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        ts: Date.now(),
+        title: state.clientTitle.trim() || `${g.title}, ${state.weight} г × ${state.qty} шт.`,
+        customer: state.clientName.trim(),
+        offerNo: no,
+        qty: state.qty,
+        totalText: fmtCur(grand),
+        snapshot: { state: snap, rates: JSON.parse(JSON.stringify(rates)) },
+      };
+      const h = getHistory();
+      const idx = h.findIndex((x) => x.offerNo === no);
+      if (idx >= 0) {
+        entry.id = h[idx].id;
+        h.splice(idx, 1);
+        h.unshift(entry);
+        setHistory(h);
+        showToast(`Обновлено в истории: № ${no}`);
+      } else {
+        h.unshift(entry);
+        setHistory(h);
+        if (no === autoOfferNo()) setSeq(getSeq() + 1);
+        showToast(`Сохранено в историю: № ${no}`);
+      }
+      state.offerNo = no;
+      if (!state.quoteDate) state.quoteDate = isoDate(entry.ts);
+      saveState();
+      syncInputsUI();
+      renderClientView();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const q = document.getElementById('historySearch').value.trim().toLowerCase();
+      const all = getHistory();
+      const items = all.filter((x) => !q || `${x.title} ${x.customer} ${x.offerNo}`.toLowerCase().includes(q));
+      document.getElementById('historyCount').textContent = all.length ? `Сохранено заказов: ${all.length}` : 'Пока пусто. Нажмите «Сохранить расчёт в историю».';
+      list.innerHTML = items.map((x) => `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold text-slate-900 truncate">${esc(x.title)}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${new Date(x.ts).toLocaleDateString('ru-RU')} · № ${esc(x.offerNo)}${x.customer ? ` · ${esc(x.customer)}` : ''} · ${x.qty} шт.</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-sm font-bold text-slate-900 mr-1">${esc(x.totalText)}</span>
+            <button type="button" data-act="open" data-id="${x.id}" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 cursor-pointer">Открыть</button>
+            <button type="button" data-act="delete" data-id="${x.id}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">Удалить</button>
+          </div>
+        </div>`).join('') || (all.length ? '<p class="text-xs text-slate-500">Ничего не найдено.</p>' : '');
+    }
+
+    function openFromHistory(id) {
+      const x = getHistory().find((e) => e.id === id);
+      if (!x || !x.snapshot) return;
+      if (!window.confirm('Открыть этот расчёт? Текущие параметры и цены будут заменены значениями из сохранённого заказа.')) return;
+      applyState(x.snapshot.state);
+      state.offerNo = x.offerNo;
+      state.quoteDate = isoDate(x.ts);
+      state.searchQuery = '';
+      if (x.snapshot.rates) { applyRatesObj(x.snapshot.rates); saveRates(); renderRateEditor(); }
+      render();
+      window.scrollTo(0, 0);
+      showToast(`Открыт расчёт № ${x.offerNo}`);
+    }
+
+    function deleteFromHistory(id) {
+      if (!window.confirm('Удалить этот заказ из истории?')) return;
+      setHistory(getHistory().filter((e) => e.id !== id));
+      renderHistory();
+    }
+
+    /* ---------- Экспорт и импорт ---------- */
+    function applyRatesObj(r) {
+      if (!r || typeof r !== 'object') return;
+      FILAMENT_GROUPS.forEach((g) => {
+        const x = r[g.id];
+        if (!x) return;
+        if (Number.isFinite(x.spoolPrice) && x.spoolPrice >= 0) rates[g.id].spoolPrice = x.spoolPrice;
+        if (x.spoolG === 750 || x.spoolG === 1000) rates[g.id].spoolG = x.spoolG;
+        if (Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+      });
+    }
+
+    function downloadBlob(blob, name) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    function exportData() {
+      const { searchQuery, ...st } = state;
+      const payload = { app: 'calc3d', format: 1, exportedAt: new Date().toISOString(), state: st, rates, history: getHistory(), offerSeq: getSeq() };
+      downloadBlob(new Blob([JSON.stringify(payload, null, 1)], { type: 'application/json' }), `calc3d-backup-${isoDate(Date.now())}.json`);
+      showToast('Резервная копия скачана');
+    }
+
+    async function importData(file) {
+      try {
+        const p = JSON.parse(await file.text());
+        if (!p || p.app !== 'calc3d') throw new Error('format');
+        if (!window.confirm('Загрузить данные из файла? Ваши цены и настройки будут заменены, история объединится с текущей.')) return;
+        applyState(p.state);
+        applyRatesObj(p.rates);
+        saveRates();
+        const cur = getHistory();
+        const ids = new Set(cur.map((e) => e.id));
+        const incoming = (Array.isArray(p.history) ? p.history : []).filter((e) => e && typeof e.id === 'string' && Number.isFinite(e.ts) && e.snapshot && !ids.has(e.id));
+        setHistory(cur.concat(incoming).sort((a, b) => b.ts - a.ts));
+        if (Number.isFinite(p.offerSeq) && p.offerSeq > getSeq()) setSeq(Math.round(p.offerSeq));
+        renderRateEditor();
+        render();
+        renderHistory();
+        showToast(`Данные загружены (добавлено заказов: ${incoming.length})`);
+      } catch (e) {
+        showToast('Не удалось прочитать файл резервной копии');
+      }
+    }
+
+    /* ---------- Смета: картинка и PDF ---------- */
+    async function renderQuoteCanvas() {
+      if (typeof window.html2canvas !== 'function') {
+        showToast('Библиотека не загружена. Откройте приложение с интернетом один раз.');
+        return null;
+      }
+      renderClientView();
+      return window.html2canvas(document.getElementById('clientCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+    }
+
+    function quoteFileName(ext) {
+      return `smeta-${effectiveOfferNo().replace(/КП/g, 'KP').replace(/[^\w.-]+/g, '_')}.${ext}`;
+    }
+
+    async function shareFile(file, fallbackBlob, fallbackName) {
+      // Только файл, без текста и заголовка: так мессенджеры (Telegram, WhatsApp, Viber) принимают его надёжнее
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return;
+        } catch (e) {
+          if (e && e.name === 'AbortError') return; // пользователь закрыл окно
+        }
+      }
+      downloadBlob(fallbackBlob, fallbackName);
+      showToast('Не удалось открыть меню отправки: файл скачан, отправьте его из «Загрузок»');
+    }
+
+    async function shareClientImage() {
+      try {
+        const canvas = await renderQuoteCanvas();
+        if (!canvas) return;
+        const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
+        if (!blob) throw new Error('blob');
+        const name = quoteFileName('jpg');
+        await shareFile(new File([blob], name, { type: 'image/jpeg' }), blob, name);
+      } catch (e) {
+        showToast('Не удалось подготовить картинку');
+      }
+    }
+
+    async function buildQuotePdf() {
+      const canvas = await renderQuoteCanvas();
+      if (!canvas) return null;
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast('Библиотека PDF не загружена. Откройте приложение с интернетом один раз.');
+        return null;
+      }
+      const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = 210, pageH = 297, margin = 15;
+      let w = pageW - margin * 2;
+      let h = (canvas.height * w) / canvas.width;
+      if (h > pageH - margin * 2) { h = pageH - margin * 2; w = (canvas.width * h) / canvas.height; }
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', (pageW - w) / 2, margin, w, h);
+      return pdf;
+    }
+
+    async function downloadClientPdf() {
+      try {
+        const pdf = await buildQuotePdf();
+        if (!pdf) return;
+        pdf.save(quoteFileName('pdf'));
+        showToast('PDF сохранён');
+      } catch (e) {
+        showToast('Не удалось создать PDF');
+      }
+    }
+
+    async function shareClientPdf() {
+      try {
+        const pdf = await buildQuotePdf();
+        if (!pdf) return;
+        const blob = pdf.output('blob');
+        const name = quoteFileName('pdf');
+        await shareFile(new File([blob], name, { type: 'application/pdf' }), blob, name);
+      } catch (e) {
+        showToast('Не удалось подготовить PDF');
+      }
+    }
+
+    /* ---------- Услуги: постобработка и моделирование ---------- */
+    function optionRowHtml(kind, i, lvl, price, checked, step) {
+      const cls = checked ? 'border-slate-900 bg-white ring-1 ring-slate-900/10' : 'border-slate-200 bg-white/60';
+      const priceHtml = i > 0
+        ? `<span class="text-xs text-slate-400">+</span><input type="number" inputmode="decimal" min="0" step="${step}" value="${price}" data-svc="${kind}" data-idx="${i}" aria-label="Цена: ${lvl.name}" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /><span class="text-xs text-slate-500">€</span>`
+        : '<span class="text-xs text-slate-500">0 €</span>';
+      return `<label class="svc-row flex items-center justify-between gap-2 p-2 rounded-lg border ${cls} cursor-pointer" data-row="${i}">
+        <span class="flex items-center gap-2 min-w-0"><input type="radio" name="${kind}Level" value="${i}" ${checked ? 'checked' : ''} class="w-4 h-4 shrink-0 text-slate-900 focus:ring-slate-900" /><span class="text-sm text-slate-900">${lvl.name}</span></span>
+        <span class="flex items-center gap-1 shrink-0">${priceHtml}</span>
+      </label>`;
+    }
+
+    function renderServiceOptions() {
+      [['post', POST_LEVELS, state.postLevel, state.postPrices, 0.5], ['model', MODEL_LEVELS, state.modelLevel, state.modelPrices, 1]].forEach(([kind, levels, cur, prices, step]) => {
+        document.getElementById(`${kind}Options`).innerHTML = levels
+          .map((lvl, i) => optionRowHtml(kind, i, lvl, prices[i], i === cur, step))
+          .join('');
+      });
+    }
+
+    const INFO = {
+      post: {
+        title: 'Уровни постобработки',
+        html: `<div class="overflow-x-auto"><table class="w-full text-left text-xs">
+          <thead><tr class="border-b border-slate-200 text-slate-500"><th class="py-2 pr-3">Уровень</th><th class="py-2 pr-3">Что входит в работу</th><th class="py-2 whitespace-nowrap">Реальная цена за 1 шт.</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="py-2 pr-3 font-semibold">1. Базовая зачистка (механика)</td><td class="py-2 pr-3">Снятие поддержек и каймы, зачистка заусенцев, лёгкая подшлифовка стыков</td><td class="py-2 whitespace-nowrap">2–4 €</td></tr>
+            <tr><td class="py-2 pr-3 font-semibold">2. Подготовка под покраску / один цвет</td><td class="py-2 pr-3">Шлифовка слоёв, обезжиривание, аэрозольный грунт + покрытие в 1 цвет и лак из баллончика</td><td class="py-2 whitespace-nowrap">6–12 €</td></tr>
+            <tr><td class="py-2 pr-3 font-semibold">3. Ручная художественная роспись</td><td class="py-2 pr-3">Грунт + многоцветная роспись кистью/маркерами, проливка теней (wash), металлики, защитный лак</td><td class="py-2">15–35+ € (зависит от размера и детализации)</td></tr>
+          </tbody></table></div>
+          <p class="text-xs text-slate-500 mt-3">В калькуляторе по умолчанию стоят 3 / 8 / 18 € за деталь. Цену каждого уровня можно изменить, она сохранится.</p>`,
+      },
+      model: {
+        title: 'Ставки за 3D-моделирование',
+        html: `<p class="mb-2 font-medium text-slate-900">Почему это разумная середина:</p>
+          <ul class="space-y-2 text-sm">
+            <li><b>10 €</b>: обычно берут за простейшие геометрические детали (заглушка, проставка, шайба, табличка за 15–20 минут).</li>
+            <li><b>15 €</b>: оптимальная базовая ставка для типовой бытовой или автомобильной детали средней сложности (кронштейн, клипса, переходник).</li>
+            <li><b>25–30 € и выше</b>: за сложные корпуса, детали с криволинейными поверхностями, резьбами или сборкой из нескольких частей.</li>
+          </ul>
+          <p class="text-xs text-slate-500 mt-3">В калькуляторе по умолчанию стоят 10 / 15 / 30 €. Моделирование оплачивается один раз за заказ, скидка за партию на него не действует.</p>`,
+      },
+    };
+
+    function openInfo(key) {
+      document.getElementById('infoTitle').textContent = INFO[key].title;
+      document.getElementById('infoBody').innerHTML = INFO[key].html;
+      document.getElementById('infoModal').classList.remove('hidden');
+    }
+    function closeInfo() { document.getElementById('infoModal').classList.add('hidden'); }
+
+    function bindOptionEvents() {
+      ['post', 'model'].forEach((kind) => {
+        const box = document.getElementById(`${kind}Options`);
+        box.addEventListener('change', (e) => {
+          if (e.target.type === 'radio') {
+            state[`${kind}Level`] = Number(e.target.value);
+            renderServiceOptions();
+            updateCalculationsOnly();
+          }
+        });
+        box.addEventListener('input', (e) => {
+          const t = e.target;
+          if (t.type !== 'number') return;
+          const v = parseFloat(String(t.value).replace(',', '.'));
+          if (!Number.isFinite(v) || v < 0) return;
+          const idx = Number(t.dataset.idx);
+          state[`${kind}Prices`][idx] = v;
+          state[`${kind}Level`] = idx;
+          box.querySelectorAll('input[type=radio]').forEach((r, j) => { r.checked = j === idx; });
+          box.querySelectorAll('.svc-row').forEach((row) => {
+            const on = Number(row.dataset.row) === idx;
+            row.classList.toggle('border-slate-900', on);
+            row.classList.toggle('ring-1', on);
+            row.classList.toggle('border-slate-200', !on);
+          });
+          updateCalculationsOnly();
+        });
+      });
+
+      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((id) => {
+        document.getElementById(id).addEventListener('change', (e) => {
+          state[id] = e.target.checked;
+          updateCalculationsOnly();
+        });
+      });
+
+      [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100]].forEach(([id, lo, hi]) => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          const v = parseFloat(String(e.target.value).replace(',', '.'));
+          if (!Number.isFinite(v)) return;
+          state[id] = Math.min(hi, Math.max(lo, v));
+          updateCalculationsOnly();
+        });
+      });
+
+      document.getElementById('currencySelect').addEventListener('change', (e) => {
+        state.currency = e.target.value;
+        render();
+      });
+      document.getElementById('fxInput').addEventListener('input', (e) => {
+        const v = parseFloat(String(e.target.value).replace(',', '.'));
+        if (!Number.isFinite(v) || v <= 0 || state.currency === 'EUR') return;
+        state.fx[state.currency] = v;
+        updateCalculationsOnly();
+      });
+
+      document.querySelectorAll('[data-info]').forEach((b) => b.addEventListener('click', () => openInfo(b.dataset.info)));
+      document.getElementById('infoClose').addEventListener('click', closeInfo);
+      document.getElementById('infoModal').addEventListener('click', (e) => { if (e.target.id === 'infoModal') closeInfo(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeInfo(); });
+    }
+
+    /* ---------- Экран для заказчика ---------- */
+    function fmtCur(v) {
+      const code = state.currency;
+      const rate = code === 'EUR' ? 1 : (state.fx[code] || 1);
+      return `${(v * rate).toFixed(2).replace('.', ',')} ${CURRENCIES[code] || '€'}`;
+    }
+
+    function clientData() {
+      const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
+      const r = calculateForGroup(g, state);
+      const lines = [];
+
+      const info = [];
+      if (state.weight > 0) info.push(`≈ ${state.weight} г`);
+      if (state.hours > 0) info.push(`≈ ${formatHours(state.hours)}`);
+      const subParts = [`${state.qty} шт. × ${fmtCur(r.printedUnitPrice)}`];
+      if (info.length) subParts.push(`на деталь: ${info.join(', ')}`);
+      if (state.spool === 'client') subParts.push('пластик заказчика');
+      lines.push({ title: `3D-печать · ${g.title}`, sub: subParts.join(' · '), sum: r.printedBatchSubtotal });
+
+      if (state.optAms) lines.push({ title: 'Многоцветная печать (AMS)', sub: '', sum: r.amsSurcharge });
+      if (state.postLevel > 0) lines.push({ title: `Постобработка: ${POST_LEVELS[state.postLevel].name}`, sub: `${state.qty} шт. × ${fmtCur(r.postUnitPrice)}`, sum: r.postBatchCost });
+      if (r.discountPct > 0) lines.push({ title: `Скидка за партию −${r.discountPct}%`, sub: '', sum: -r.discountAmount });
+      if (state.modelLevel > 0) lines.push({ title: `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name}`, sub: 'разово', sum: r.modelingBatchCost });
+      if (r.minTopUp > 0) lines.push({ title: 'Доплата до минимальной цены заказа', sub: '', sum: r.minTopUp });
+
+      const totals = [];
+      if (state.optVat) {
+        totals.push({ title: 'Сумма без НДС', sum: r.batchTotalPrice });
+        totals.push({ title: `НДС ${formatNum(state.vatPct, 1)}%`, sum: r.vatAmount });
+      }
+      const grand = state.optVat ? r.grossTotal : r.batchTotalPrice;
+      return { r, lines, totals, grand };
+    }
+
+    function renderClientView() {
+      const { r, lines, totals, grand } = clientData();
+      document.getElementById('clientHeading').textContent = state.clientTitle.trim() || '3D-печать на заказ';
+      const cust = document.getElementById('clientCustomer');
+      if (state.clientName.trim()) {
+        cust.textContent = `Заказчик: ${state.clientName.trim()}`;
+        cust.classList.remove('hidden');
+      } else {
+        cust.classList.add('hidden');
+      }
+      const qd = state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date();
+      document.getElementById('clientDate').textContent = `Дата: ${qd.toLocaleDateString('ru-RU')}`;
+      document.getElementById('clientOfferNo').textContent = `№ ${effectiveOfferNo()}`;
+      const validEl = document.getElementById('clientValid');
+      if (state.validDays > 0) {
+        const until = new Date(qd.getTime() + state.validDays * 86400000);
+        validEl.textContent = `Действительно до ${until.toLocaleDateString('ru-RU')}`;
+      } else {
+        validEl.textContent = '';
+      }
+      document.getElementById('clientBrandName').textContent = state.brandName.trim() || '3D-печать';
+      document.getElementById('clientBrandContacts').textContent =
+        [state.brandEmail.trim(), state.brandPhone.trim()].filter(Boolean).join(' · ');
+
+      const lineHtml = (l, cls) => `
+        <div class="flex items-start justify-between gap-4 py-3">
+          <div>
+            <div class="font-medium text-slate-900">${l.title}</div>
+            ${l.sub ? `<div class="text-xs text-slate-500 mt-0.5">${l.sub}</div>` : ''}
+          </div>
+          <div class="font-semibold ${cls || 'text-slate-900'} whitespace-nowrap">${l.sum < 0 ? '−' : ''}${fmtCur(Math.abs(l.sum))}</div>
+        </div>`;
+      document.getElementById('clientLines').innerHTML =
+        lines.map((l) => lineHtml(l, l.sum < 0 ? 'text-rose-600' : '')).join('') +
+        totals.map((l) => lineHtml(l, 'text-slate-700')).join('');
+
+      document.getElementById('clientTotal').textContent = fmtCur(grand);
+      document.getElementById('clientUnitNote').textContent =
+        state.qty > 1 ? `В среднем ${fmtCur(grand / state.qty)} за 1 шт.` : '';
+
+      const noteEl = document.getElementById('clientNoteView');
+      if (state.clientNote.trim()) {
+        noteEl.textContent = state.clientNote.trim();
+        noteEl.classList.remove('hidden');
+      } else {
+        noteEl.classList.add('hidden');
+      }
+    }
+
+    function buildClientText() {
+      const { lines, totals, grand } = clientData();
+      const out = [];
+      out.push('Расчёт стоимости 3D-печати');
+      out.push(state.clientTitle.trim() || '3D-печать на заказ');
+      if (state.clientName.trim()) out.push(`Заказчик: ${state.clientName.trim()}`);
+      out.push(`№ ${effectiveOfferNo()} от ${(state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date()).toLocaleDateString('ru-RU')}`);
+      if (state.validDays > 0) out.push(`Цена действительна ${state.validDays} дн.`);
+      if (state.brandName.trim() || state.brandEmail.trim()) out.push([state.brandName.trim(), state.brandEmail.trim(), state.brandPhone.trim()].filter(Boolean).join(' · '));
+      out.push('');
+      lines.forEach((l) => out.push(`• ${l.title}${l.sub ? ` (${l.sub})` : ''}: ${l.sum < 0 ? '−' : ''}${fmtCur(Math.abs(l.sum))}`));
+      totals.forEach((l) => out.push(`• ${l.title}: ${fmtCur(l.sum)}`));
+      out.push('');
+      out.push(`Итого: ${fmtCur(grand)}`);
+      if (state.qty > 1) out.push(`В среднем ${fmtCur(grand / state.qty)} за 1 шт.`);
+      if (state.clientNote.trim()) { out.push(''); out.push(state.clientNote.trim()); }
+      return out.join('\n');
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('appToast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
+    }
+
+    async function copyClientText() {
+      const text = buildClientText();
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (err) { /* ignore */ }
+        ta.remove();
+      }
+      showToast('Текст скопирован');
+    }
+
+    function showClientView(on) {
+      document.getElementById('mainView').classList.toggle('hidden', on);
+      document.getElementById('clientView').classList.toggle('hidden', !on);
+      if (on) renderClientView();
+      window.scrollTo(0, 0);
+    }
+
+    function bindExtraEvents() {
+      const rateEditor = document.getElementById('ratesEditor');
+      const onRateEdit = (e) => {
+        const t = e.target;
+        if (!t.dataset || !t.dataset.group) return;
+        const v = parseFloat(String(t.value).replace(',', '.'));
+        if (!Number.isFinite(v) || v < 0) return;
+        const r = rates[t.dataset.group];
+        r[t.dataset.kind] = v;
+        const out = document.getElementById(`rateCalc_${t.dataset.group}`);
+        if (out) out.textContent = rateCalcText(r);
+        saveRates();
+        renderFilamentGroupCards();
+        updateCalculationsOnly();
+      };
+      rateEditor.addEventListener('input', onRateEdit);
+      rateEditor.addEventListener('change', onRateEdit);
+
+      document.getElementById('resetRatesBtn').addEventListener('click', () => {
+        defaultRates();
+        saveRates();
+        renderRateEditor();
+        render();
+      });
+
+      document.getElementById('clientViewBtn').addEventListener('click', () => { location.hash = 'client'; });
+      document.getElementById('backBtn').addEventListener('click', () => {
+        if (location.hash === '#client') history.back(); else showClientView(false);
+      });
+      window.addEventListener('hashchange', () => showClientView(location.hash === '#client'));
+
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote'], ['clientOfferInput', 'offerNo'], ['brandNameInput', 'brandName'], ['brandEmailInput', 'brandEmail'], ['brandPhoneInput', 'brandPhone'], ['validDaysInput', 'validDays']].forEach(([id, key]) => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          state[key] = key === 'validDays' ? Math.min(365, Math.max(0, parseInt(e.target.value, 10) || 0)) : e.target.value;
+          renderClientView();
+          saveState();
+        });
+      });
+
+      document.getElementById('copyBtn').addEventListener('click', copyClientText);
+      document.getElementById('printBtn').addEventListener('click', () => window.print());
+      document.getElementById('shareBtn').addEventListener('click', shareClientImage);
+      document.getElementById('pdfBtn').addEventListener('click', downloadClientPdf);
+      document.getElementById('sendPdfBtn').addEventListener('click', shareClientPdf);
+      document.getElementById('saveBtn2').addEventListener('click', saveToHistory);
+      document.getElementById('saveHistoryBtn').addEventListener('click', saveToHistory);
+
+      document.getElementById('historySearch').addEventListener('input', renderHistory);
+      document.getElementById('historyList').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        if (btn.dataset.act === 'open') openFromHistory(btn.dataset.id);
+        if (btn.dataset.act === 'delete') deleteFromHistory(btn.dataset.id);
+      });
+      document.getElementById('exportBtn').addEventListener('click', exportData);
+      document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+      document.getElementById('importFile').addEventListener('change', (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) importData(f);
+        e.target.value = '';
+      });
+    }
+
+    loadState();
+    loadRates();
+    bindEvents();
+    bindExtraEvents();
+    bindOptionEvents();
+    renderRateEditor();
+    render();
+    renderHistory();
+    showClientView(location.hash === '#client');
+
+    /* ---------- Офлайн-режим (PWA) ---------- */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
