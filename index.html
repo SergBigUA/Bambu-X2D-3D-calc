@@ -590,8 +590,9 @@
     </article>
 
     <div class="no-print grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
-      <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Поделиться (таблица)</button>
+      <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Отправить картинку</button>
       <button id="pdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Скачать PDF</button>
+      <button id="sendPdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Отправить PDF</button>
       <button id="saveBtn2" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Сохранить в историю</button>
       <button id="copyBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Копировать текст</button>
       <button id="printBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Печать</button>
@@ -1637,43 +1638,69 @@
       return `smeta-${effectiveOfferNo().replace(/КП/g, 'KP').replace(/[^\w.-]+/g, '_')}.${ext}`;
     }
 
+    async function shareFile(file, fallbackBlob, fallbackName) {
+      // Только файл, без текста и заголовка: так мессенджеры (Telegram, WhatsApp, Viber) принимают его надёжнее
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return;
+        } catch (e) {
+          if (e && e.name === 'AbortError') return; // пользователь закрыл окно
+        }
+      }
+      downloadBlob(fallbackBlob, fallbackName);
+      showToast('Не удалось открыть меню отправки: файл скачан, отправьте его из «Загрузок»');
+    }
+
     async function shareClientImage() {
       try {
         const canvas = await renderQuoteCanvas();
         if (!canvas) return;
-        const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+        const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
         if (!blob) throw new Error('blob');
-        const file = new File([blob], quoteFileName('png'), { type: 'image/png' });
-        const { grand } = clientData();
-        const title = state.clientTitle.trim() || 'Расчёт стоимости 3D-печати';
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({ files: [file], title, text: `Смета № ${effectiveOfferNo()}: ${fmtCur(grand)}` });
-          } catch (e) { /* пользователь закрыл окно */ }
-        } else {
-          downloadBlob(blob, quoteFileName('png'));
-          showToast('Картинка сметы скачана');
-        }
+        const name = quoteFileName('jpg');
+        await shareFile(new File([blob], name, { type: 'image/jpeg' }), blob, name);
       } catch (e) {
         showToast('Не удалось подготовить картинку');
       }
     }
 
+    async function buildQuotePdf() {
+      const canvas = await renderQuoteCanvas();
+      if (!canvas) return null;
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast('Библиотека PDF не загружена. Откройте приложение с интернетом один раз.');
+        return null;
+      }
+      const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = 210, pageH = 297, margin = 15;
+      let w = pageW - margin * 2;
+      let h = (canvas.height * w) / canvas.width;
+      if (h > pageH - margin * 2) { h = pageH - margin * 2; w = (canvas.width * h) / canvas.height; }
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', (pageW - w) / 2, margin, w, h);
+      return pdf;
+    }
+
     async function downloadClientPdf() {
       try {
-        const canvas = await renderQuoteCanvas();
-        if (!canvas) return;
-        if (!window.jspdf || !window.jspdf.jsPDF) { showToast('Библиотека PDF не загружена. Откройте приложение с интернетом один раз.'); return; }
-        const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageW = 210, pageH = 297, margin = 15;
-        let w = pageW - margin * 2;
-        let h = (canvas.height * w) / canvas.width;
-        if (h > pageH - margin * 2) { h = pageH - margin * 2; w = (canvas.width * h) / canvas.height; }
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pageW - w) / 2, margin, w, h);
+        const pdf = await buildQuotePdf();
+        if (!pdf) return;
         pdf.save(quoteFileName('pdf'));
         showToast('PDF сохранён');
       } catch (e) {
         showToast('Не удалось создать PDF');
+      }
+    }
+
+    async function shareClientPdf() {
+      try {
+        const pdf = await buildQuotePdf();
+        if (!pdf) return;
+        const blob = pdf.output('blob');
+        const name = quoteFileName('pdf');
+        await shareFile(new File([blob], name, { type: 'application/pdf' }), blob, name);
+      } catch (e) {
+        showToast('Не удалось подготовить PDF');
       }
     }
 
@@ -1967,6 +1994,7 @@
       document.getElementById('printBtn').addEventListener('click', () => window.print());
       document.getElementById('shareBtn').addEventListener('click', shareClientImage);
       document.getElementById('pdfBtn').addEventListener('click', downloadClientPdf);
+      document.getElementById('sendPdfBtn').addEventListener('click', shareClientPdf);
       document.getElementById('saveBtn2').addEventListener('click', saveToHistory);
       document.getElementById('saveHistoryBtn').addEventListener('click', saveToHistory);
 
