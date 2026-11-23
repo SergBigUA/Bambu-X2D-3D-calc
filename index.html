@@ -12,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -188,9 +190,9 @@
       <div id="filamentGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
 
       <details id="ratesPanel" class="mt-4 rounded-2xl border border-slate-200/90 bg-slate-50/60">
-        <summary class="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-800">Мои цены на группы (€/г и €/ч)</summary>
+        <summary class="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-800">Мои цены на группы (катушка и станок)</summary>
         <div class="px-4 pb-4">
-          <p class="text-xs text-slate-500 mb-3">Для каждой группы можно изменить цену пластика за грамм и стоимость часа работы принтера. Группы остаются, цены сохраняются в приложении.</p>
+          <p class="text-xs text-slate-500 mb-3">Укажите цену катушки (1 кг или 750 г): цена за грамм пересчитается автоматически. Также можно изменить стоимость часа принтера. Группы остаются, цены сохраняются в приложении.</p>
           <div id="ratesEditor" class="space-y-2"></div>
           <button id="resetRatesBtn" type="button" class="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 transition cursor-pointer">Вернуть стандартные цены</button>
         </div>
@@ -239,12 +241,13 @@
           <div class="flex items-center justify-between gap-4 mb-2">
             <label for="hoursNumber" class="text-sm font-medium text-slate-700">4. Время печати</label>
             <div class="flex items-center gap-1.5">
-              <input id="hoursNumber" type="number" min="0" max="100" step="0.1" value="2.0"
-                class="no-spinner w-24 px-3 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
-              <span class="text-sm font-medium text-slate-500 w-6">ч</span>
+              <input id="hoursNumber" type="number" inputmode="numeric" min="0" max="100" step="1" value="2" aria-label="Часы" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" />
+              <span class="text-sm font-medium text-slate-500">ч</span>
+              <input id="minutesNumber" type="number" inputmode="numeric" min="0" max="59" step="1" value="0" aria-label="Минуты" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" />
+              <span class="text-sm font-medium text-slate-500">мин</span>
             </div>
           </div>
-          <input id="hoursSlider" type="range" min="0" max="100" step="0.1" value="2.0" aria-label="Ползунок времени печати в часах" class="calc-slider" />
+          <input id="hoursSlider" type="range" min="0" max="6000" step="5" value="120" aria-label="Ползунок времени печати в часах" class="calc-slider" />
           <div class="flex justify-between text-[11px] text-slate-400 mt-1">
             <span>0 ч</span><span>25 ч</span><span>50 ч</span><span>75 ч</span><span>100 ч</span>
           </div>
@@ -288,9 +291,10 @@
         </div>
 
         <div class="pt-2 border-t border-slate-100">
-          <div class="text-sm font-medium text-slate-700 mb-3">7. Дополнительные услуги</div>
-          <div class="space-y-2.5">
-            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 hover:border-slate-300 bg-slate-50/60 cursor-pointer transition">
+          <div class="text-sm font-medium text-slate-700 mb-3">7. Дополнительные услуги, расходы и условия</div>
+          <div class="space-y-3">
+
+            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 cursor-pointer transition">
               <span class="flex items-start sm:items-center gap-3">
                 <input id="optAms" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
                 <span>
@@ -301,27 +305,79 @@
               <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">+15% к базовой цене</span>
             </label>
 
-            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 hover:border-slate-300 bg-slate-50/60 cursor-pointer transition">
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-sm font-medium text-slate-900">Постобработка <span class="text-xs font-normal text-slate-500">(цена за 1 шт., можно изменить)</span></span>
+                <button type="button" data-info="post" class="info-btn shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">ⓘ Подсказка</button>
+              </div>
+              <div id="postOptions" class="space-y-1.5"></div>
+            </div>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-sm font-medium text-slate-900">3D-моделирование с нуля <span class="text-xs font-normal text-slate-500">(разово, можно изменить)</span></span>
+                <button type="button" data-info="model" class="info-btn shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">ⓘ Подсказка</button>
+              </div>
+              <div id="modelOptions" class="space-y-1.5"></div>
+            </div>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-2.5">
+              <div class="text-sm font-medium text-slate-900">Износ и расходы <span class="text-xs font-normal text-slate-500">(входят в себестоимость)</span></div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optElectric" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm text-slate-900">Электричество</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="powerW" type="number" inputmode="decimal" min="0" step="10" value="200" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> Вт ×
+                  <input id="tariff" type="number" inputmode="decimal" min="0" step="0.01" value="0.2" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> €/кВт·ч</span>
+              </div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optWear" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm text-slate-900">Износ сопла и стола</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="wearRate" type="number" inputmode="decimal" min="0" step="0.01" value="0.05" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> €/ч</span>
+              </div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optDefect" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm text-slate-900">Процент брака</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="defectPct" type="number" inputmode="decimal" min="0" step="1" value="5" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> % (обычно 5–10)</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Ставка станка в группе уже может частично включать энергию и износ. Включайте пункты, если хотите учитывать их отдельно.</p>
+            </div>
+
+            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 cursor-pointer transition">
               <span class="flex items-start sm:items-center gap-3">
-                <input id="optPost" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+                <input id="optDiscount" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
                 <span>
-                  <span class="block text-sm font-medium text-slate-900">Постобработка: снятие поддержек, шлифовка, грунт/покраска</span>
-                  <span class="block text-xs text-slate-500">Ручная доработка поверхности каждой детали в партии</span>
+                  <span class="block text-sm font-medium text-slate-900">Скидка за партию</span>
+                  <span class="block text-xs text-slate-500">от 10 шт. −2% · от 20 шт. −3% · от 50 шт. −5% · от 100 шт. −10%. Не действует на моделирование.</span>
                 </span>
               </span>
-              <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">+3,00 € / шт.</span>
+              <span id="discountNow" class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">0%</span>
             </label>
 
-            <label class="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 hover:border-slate-300 bg-slate-50/60 cursor-pointer transition">
-              <span class="flex items-start sm:items-center gap-3">
-                <input id="optModeling" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
+            <div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+              <label class="flex items-start sm:items-center gap-3 cursor-pointer">
+                <input id="optMin" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
                 <span>
-                  <span class="block text-sm font-medium text-slate-900">3D-моделирование с нуля по размерам заказчика</span>
-                  <span class="block text-xs text-slate-500">Проектирование CAD-модели и подготовка файла к нарезке</span>
+                  <span class="block text-sm font-medium text-slate-900">Минимальная цена заказа</span>
+                  <span class="block text-xs text-slate-500">Если сумма меньше, доплата до минимума</span>
                 </span>
-              </span>
-              <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">+15,00 € разово</span>
-            </label>
+              </label>
+              <span class="flex items-center gap-1 text-xs text-slate-500 shrink-0"><input id="minPrice" type="number" inputmode="decimal" min="0" step="0.5" value="2" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> €</span>
+            </div>
+
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-3">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><input id="optVat" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm font-medium text-slate-900">НДС</span></label>
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="vatPct" type="number" inputmode="decimal" min="0" step="1" value="21" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> %</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <span class="text-sm font-medium text-slate-900">Валюта сметы для заказчика</span>
+                <span class="flex items-center gap-2">
+                  <select id="currencySelect" class="px-2 py-1 text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15">
+                    <option value="EUR">EUR €</option><option value="USD">USD $</option><option value="PLN">PLN zł</option><option value="UAH">UAH ₴</option><option value="GBP">GBP £</option>
+                  </select>
+                  <span id="fxWrap" class="hidden flex items-center gap-1 text-xs text-slate-500">1 € = <input id="fxInput" type="number" inputmode="decimal" min="0" step="0.01" value="1" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> <span id="fxCode"></span></span>
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400">Расчёт ведётся в €. Валюта меняет только смету для заказчика. Курс укажите актуальный.</p>
+            </div>
+
           </div>
         </div>
       </section>
@@ -347,38 +403,21 @@
           </div>
 
           <dl class="space-y-2.5 text-sm">
-            <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-600">Материал (1 шт.) <span id="breakdownPlasticRate" class="text-xs text-slate-400">(60 г × 0,020 €/г)</span></dt>
-              <dd id="breakdownPlasticVal" class="font-semibold text-slate-900">1,20 €</dd>
-            </div>
-            <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-600">Машинное время (1 шт.) <span id="breakdownTimeRate" class="text-xs text-slate-400">(2,0 ч × 0,33 €/ч)</span></dt>
-              <dd id="breakdownTimeVal" class="font-semibold text-slate-900">0,66 €</dd>
-            </div>
-            <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-700 font-medium">Чистая себестоимость (1 шт.)</dt>
-              <dd id="breakdownUnitCostVal" class="font-semibold text-slate-900">1,86 €</dd>
-            </div>
-            <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-600">Базовая печать с наценкой <span id="breakdownMarkupLabel" class="text-xs text-slate-400">(×2,5 × 1 шт.)</span></dt>
-              <dd id="breakdownPrintedSubtotalVal" class="font-semibold text-slate-900">4,65 €</dd>
-            </div>
-            <div id="rowAms" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-600">Надбавка AMS (+15% к базовой цене)</dt>
-              <dd id="breakdownAmsVal" class="font-semibold text-slate-900">+0,70 €</dd>
-            </div>
-            <div id="rowPostProcessing" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-600">Постобработка <span id="breakdownPostFormula" class="text-xs text-slate-400">(3,00 € × 1 шт.)</span></dt>
-              <dd id="breakdownPostVal" class="font-semibold text-slate-900">+3,00 €</dd>
-            </div>
-            <div id="rowModeling" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100">
-              <dt class="text-slate-600">3D-моделирование с нуля (разово)</dt>
-              <dd id="breakdownModelingVal" class="font-semibold text-slate-900">+15,00 €</dd>
-            </div>
-            <div class="flex items-center justify-between pt-1.5">
-              <dt class="text-base font-semibold text-slate-900">Итого за партию</dt>
-              <dd id="breakdownBatchTotalVal" class="text-lg font-bold text-slate-900">4,65 €</dd>
-            </div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Материал (1 шт.) <span id="breakdownPlasticRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownPlasticVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Машинное время (1 шт.) <span id="breakdownTimeRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownTimeVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowElectric" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Электричество <span id="breakdownElectricRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownElectricVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowWear" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Износ сопла и стола <span id="breakdownWearRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownWearVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowDefect" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Брак <span id="breakdownDefectRate" class="text-xs text-slate-400"></span></dt><dd id="breakdownDefectVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-700 font-medium">Чистая себестоимость (1 шт.)</dt><dd id="breakdownUnitCostVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Базовая печать с наценкой <span id="breakdownMarkupLabel" class="text-xs text-slate-400"></span></dt><dd id="breakdownPrintedSubtotalVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowAms" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Надбавка AMS (+15% к базовой цене)</dt><dd id="breakdownAmsVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowPostProcessing" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600"><span id="breakdownPostLabel">Постобработка</span> <span id="breakdownPostFormula" class="text-xs text-slate-400"></span></dt><dd id="breakdownPostVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowDiscount" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownDiscountLabel">Скидка за партию</dt><dd id="breakdownDiscountVal" class="font-semibold text-rose-600"></dd></div>
+            <div id="rowModeling" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownModelingLabel">3D-моделирование (разово)</dt><dd id="breakdownModelingVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowMin" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownMinLabel">Доплата до минимальной цены заказа</dt><dd id="breakdownMinVal" class="font-semibold text-slate-900"></dd></div>
+            <div class="flex items-center justify-between pt-1.5"><dt class="text-base font-semibold text-slate-900">Итого за партию</dt><dd id="breakdownBatchTotalVal" class="text-lg font-bold text-slate-900"></dd></div>
+            <div id="rowVat" class="hidden flex items-center justify-between py-1.5 border-t border-slate-100"><dt class="text-slate-600" id="breakdownVatLabel">НДС</dt><dd id="breakdownVatVal" class="font-semibold text-slate-900"></dd></div>
+            <div id="rowGross" class="hidden flex items-center justify-between"><dt class="text-base font-semibold text-slate-900">К оплате с НДС</dt><dd id="breakdownGrossVal" class="text-lg font-bold text-slate-900"></dd></div>
           </dl>
         </section>
 
@@ -402,10 +441,17 @@
               <span class="text-xs sm:text-sm font-medium text-white">Итого за партию</span>
               <span id="batchPriceValue" class="text-xl sm:text-2xl font-bold text-white">4,65 €</span>
             </div>
+
+            <div id="rowBatchGross" class="hidden flex items-baseline justify-between py-2.5 px-3.5 rounded-xl bg-white/5 border border-white/10">
+              <span class="text-xs sm:text-sm text-slate-300">К оплате с НДС</span>
+              <span id="batchGrossValue" class="text-base sm:text-lg font-bold text-white">0,00 €</span>
+            </div>
             <div class="flex items-baseline justify-between py-3 px-3.5 rounded-xl bg-emerald-500/15 border border-emerald-400/25">
               <span class="text-xs sm:text-sm font-medium text-emerald-200">Чистая прибыль</span>
               <span id="batchProfitValue" class="text-xl sm:text-2xl font-bold text-emerald-400">2,79 €</span>
             </div>
+
+            <button id="saveHistoryBtn" type="button" class="w-full px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-sm font-medium transition cursor-pointer">Сохранить расчёт в историю</button>
           </div>
         </section>
 
@@ -449,6 +495,27 @@
         </table>
       </div>
     </section>
+
+    <section id="historySection" aria-label="История заказов" class="mt-6 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">История заказов</h2>
+          <p id="historyCount" class="text-xs text-slate-500 mt-0.5"></p>
+        </div>
+        <input id="historySearch" type="text" placeholder="Поиск: название, заказчик, номер" class="sm:w-80 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      </div>
+      <div id="historyList" class="space-y-2"></div>
+    </section>
+
+    <section id="dataSection" aria-label="Данные и резервная копия" class="mt-6 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
+      <h2 class="text-base font-semibold text-slate-900">Резервная копия</h2>
+      <p class="text-xs text-slate-500 mt-0.5 mb-3">В файл сохраняются ваши цены, настройки, текущий расчёт и вся история. Файл можно загрузить на другом телефоне.</p>
+      <div class="flex flex-wrap gap-2">
+        <button id="exportBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Экспорт в файл</button>
+        <button id="importBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Импорт из файла</button>
+        <input id="importFile" type="file" accept=".json,application/json" class="hidden" />
+      </div>
+    </section>
   </div>
 
   <div id="clientView" class="hidden max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -470,16 +537,48 @@
         <label for="clientNoteInput" class="block text-xs font-medium text-slate-600 mb-1">Примечание (сроки, условия, необязательно)</label>
         <textarea id="clientNoteInput" rows="2" maxlength="500" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400"></textarea>
       </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="clientOfferInput" class="block text-xs font-medium text-slate-600 mb-1">Номер предложения</label>
+          <input id="clientOfferInput" type="text" maxlength="30" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+        </div>
+        <div>
+          <label for="validDaysInput" class="block text-xs font-medium text-slate-600 mb-1">Цена действительна, дней</label>
+          <input id="validDaysInput" type="number" inputmode="numeric" min="0" max="365" step="1" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+        </div>
+      </div>
+      <details class="rounded-lg border border-slate-200 bg-slate-50/60">
+        <summary class="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-slate-700">Данные в шапке сметы (название, e-mail, телефон)</summary>
+        <div class="px-3 pb-3 space-y-2">
+          <input id="brandNameInput" type="text" maxlength="60" placeholder="Название" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <input id="brandEmailInput" type="text" maxlength="80" placeholder="E-mail" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <input id="brandPhoneInput" type="text" maxlength="40" placeholder="Телефон (необязательно)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+        </div>
+      </details>
     </div>
 
     <article id="clientCard" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
-      <div class="flex items-start justify-between gap-3 pb-4 border-b border-slate-200">
-        <div>
+      <div class="pb-4 border-b border-slate-200">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-slate-900 text-emerald-400 font-extrabold text-lg leading-none">3D</span>
+            <div class="leading-tight">
+              <div id="clientBrandName" class="text-base font-bold text-slate-900">SergBigUA &amp; co</div>
+              <div id="clientBrandContacts" class="text-[11px] text-slate-500 mt-0.5"></div>
+            </div>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg border-2 border-emerald-500 text-emerald-600 font-extrabold text-xs leading-none">3D</span>
+          </div>
+          <div class="text-right text-xs text-slate-500 leading-snug">
+            <div id="clientOfferNo" class="text-sm font-semibold text-slate-900"></div>
+            <div id="clientDate"></div>
+            <div id="clientValid"></div>
+          </div>
+        </div>
+        <div class="mt-4">
           <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Расчёт стоимости 3D-печати</div>
           <h1 id="clientHeading" class="text-xl font-bold tracking-tight text-slate-900 mt-1">3D-печать на заказ</h1>
           <p id="clientCustomer" class="hidden text-sm text-slate-600 mt-1"></p>
         </div>
-        <div id="clientDate" class="text-xs text-slate-500 whitespace-nowrap"></div>
       </div>
       <div id="clientLines" class="divide-y divide-slate-100 text-sm"></div>
       <div class="mt-4 pt-4 border-t-2 border-slate-900 flex items-baseline justify-between gap-3">
@@ -490,12 +589,26 @@
       <p id="clientNoteView" class="hidden mt-4 text-sm text-slate-700 whitespace-pre-line"></p>
     </article>
 
-    <div class="no-print grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
-      <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition cursor-pointer">Поделиться</button>
-      <button id="copyBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-200 transition cursor-pointer">Копировать текст</button>
-      <button id="printBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-200 transition cursor-pointer">Печать / PDF</button>
+    <div class="no-print grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+      <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Поделиться (таблица)</button>
+      <button id="pdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Скачать PDF</button>
+      <button id="saveBtn2" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Сохранить в историю</button>
+      <button id="copyBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Копировать текст</button>
+      <button id="printBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Печать</button>
     </div>
     <p id="clientToast" class="no-print text-xs text-emerald-700 mt-2 h-4"></p>
+  </div>
+
+  <div id="appToast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm shadow-lg text-center"></div>
+
+  <div id="infoModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 p-3">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-5">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <h3 id="infoTitle" class="text-base font-semibold text-slate-900"></h3>
+        <button id="infoClose" type="button" class="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">Закрыть</button>
+      </div>
+      <div id="infoBody" class="text-sm text-slate-700"></div>
+    </div>
   </div>
 
   <script>
@@ -558,6 +671,26 @@
       modelingOnce: 15.0,
     };
 
+    const POST_LEVELS = [
+      { name: 'Без постобработки' },
+      { name: 'Базовая зачистка' },
+      { name: 'Грунт + покраска в 1 цвет' },
+      { name: 'Ручная роспись + лак' },
+    ];
+    const MODEL_LEVELS = [
+      { name: 'Без моделирования' },
+      { name: 'Простейшие геометрические детали' },
+      { name: 'Базовая ставка (типовая деталь)' },
+      { name: 'Сложные детали' },
+    ];
+    const DISCOUNT_TIERS = [
+      { min: 100, pct: 10 },
+      { min: 50, pct: 5 },
+      { min: 20, pct: 3 },
+      { min: 10, pct: 2 },
+    ];
+    const CURRENCIES = { EUR: '€', USD: '$', PLN: 'zł', UAH: '₴', GBP: '£' };
+
     const DEFAULTS = {
       groupId: 'group_1',
       spool: 'mine',
@@ -566,37 +699,67 @@
       markup: 2.5,
       qty: 1,
       optAms: false,
-      optPost: false,
-      optModeling: false,
+      postLevel: 0,
+      postPrices: [0, 3, 8, 18],
+      modelLevel: 0,
+      modelPrices: [0, 10, 15, 30],
+      optElectric: false, powerW: 200, tariff: 0.2,
+      optWear: false, wearRate: 0.05,
+      optDefect: false, defectPct: 5,
+      optDiscount: false,
+      optMin: false, minPrice: 2,
+      optVat: false, vatPct: 21,
+      currency: 'EUR',
+      fx: { USD: 1.15, PLN: 4.25, UAH: 48, GBP: 0.87 },
       searchQuery: '',
       clientTitle: '',
       clientName: '',
       clientNote: '',
+      brandName: 'SergBigUA & co',
+      brandEmail: 'serg140981@gmail.com',
+      brandPhone: '',
+      offerNo: '',
+      validDays: 14,
+      quoteDate: '',
     };
 
-    const state = { ...DEFAULTS };
+    const state = { ...DEFAULTS, postPrices: [...DEFAULTS.postPrices], modelPrices: [...DEFAULTS.modelPrices], fx: { ...DEFAULTS.fx } };
 
-    /* ---------- Редактируемые цены групп ---------- */
-    const RATES_KEY = 'calc3d_rates_v1';
+    /* ---------- Редактируемые цены групп (цена за катушку) ---------- */
+    const RATES_KEY = 'calc3d_rates_v2';
     const rates = {};
 
     function defaultRates() {
       FILAMENT_GROUPS.forEach((g) => {
-        rates[g.id] = { plastic: g.plasticRate, printer: g.printerRate };
+        rates[g.id] = { spoolPrice: Math.round(g.plasticRate * 1000 * 100) / 100, spoolG: 1000, printer: g.printerRate };
       });
     }
     defaultRates();
 
     function loadRates() {
       try {
-        const raw = localStorage.getItem(RATES_KEY);
-        if (!raw) return;
-        const r = JSON.parse(raw);
-        FILAMENT_GROUPS.forEach((g) => {
-          const x = r && r[g.id];
-          if (x && Number.isFinite(x.plastic) && x.plastic >= 0) rates[g.id].plastic = x.plastic;
-          if (x && Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
-        });
+        const raw2 = localStorage.getItem(RATES_KEY);
+        if (raw2) {
+          const r = JSON.parse(raw2);
+          FILAMENT_GROUPS.forEach((g) => {
+            const x = r && r[g.id];
+            if (!x) return;
+            if (Number.isFinite(x.spoolPrice) && x.spoolPrice >= 0) rates[g.id].spoolPrice = x.spoolPrice;
+            if (x.spoolG === 750 || x.spoolG === 1000) rates[g.id].spoolG = x.spoolG;
+            if (Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+          });
+          return;
+        }
+        const raw1 = localStorage.getItem('calc3d_rates_v1');
+        if (raw1) {
+          const r = JSON.parse(raw1);
+          FILAMENT_GROUPS.forEach((g) => {
+            const x = r && r[g.id];
+            if (!x) return;
+            if (Number.isFinite(x.plastic) && x.plastic >= 0) rates[g.id].spoolPrice = Math.round(x.plastic * 1000 * 100) / 100;
+            if (Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+          });
+        }
       } catch (e) { /* ignore */ }
     }
 
@@ -605,11 +768,14 @@
     }
 
     function rateOf(group) {
-      return rates[group.id] || { plastic: group.plasticRate, printer: group.printerRate };
+      const r = rates[group.id] || { spoolPrice: group.plasticRate * 1000, spoolG: 1000, printer: group.printerRate };
+      return { plastic: r.spoolG > 0 ? r.spoolPrice / r.spoolG : 0, printer: r.printer, spoolPrice: r.spoolPrice, spoolG: r.spoolG };
     }
 
     function spoolText(group) {
-      return `≈ ${Math.round(rateOf(group).plastic * 1000)} €/кг`;
+      const r = rateOf(group);
+      const price = Math.abs(r.spoolPrice % 1) < 0.001 ? String(Math.round(r.spoolPrice)) : formatNum(r.spoolPrice, 2);
+      return `${price} € / ${r.spoolG >= 1000 ? '1 кг' : r.spoolG + ' г'}`;
     }
 
     /* ---------- Сохранение настроек между запусками ---------- */
@@ -619,19 +785,45 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
-        const s = JSON.parse(raw);
+        applyState(JSON.parse(raw));
+      } catch (e) { /* ignore */ }
+    }
+
+    function applyState(s) {
+      try {
+        if (!s || typeof s !== 'object') return;
         if (GROUPS_MAP[s.groupId]) state.groupId = s.groupId;
         if (s.spool === 'mine' || s.spool === 'client') state.spool = s.spool;
         if (Number.isFinite(s.weight)) state.weight = Math.min(2000, Math.max(0, Math.round(s.weight)));
-        if (Number.isFinite(s.hours)) state.hours = Math.min(100, Math.max(0, Math.round(s.hours * 10) / 10));
+        if (Number.isFinite(s.hours)) state.hours = Math.min(100, Math.max(0, Math.round(s.hours * 60) / 60));
         if (Number.isFinite(s.markup)) state.markup = Math.min(5, Math.max(1, s.markup));
         if (Number.isFinite(s.qty)) state.qty = Math.min(500, Math.max(1, Math.round(s.qty)));
         state.optAms = !!s.optAms;
-        state.optPost = !!s.optPost;
-        state.optModeling = !!s.optModeling;
+        if (Number.isInteger(s.postLevel) && s.postLevel >= 0 && s.postLevel <= 3) state.postLevel = s.postLevel;
+        else if (s.optPost) state.postLevel = 1;
+        if (Number.isInteger(s.modelLevel) && s.modelLevel >= 0 && s.modelLevel <= 3) state.modelLevel = s.modelLevel;
+        else if (s.optModeling) state.modelLevel = 2;
+        const okArr = (a) => Array.isArray(a) && a.length === 4 && a.every((x) => Number.isFinite(x) && x >= 0);
+        if (okArr(s.postPrices)) state.postPrices = [0, s.postPrices[1], s.postPrices[2], s.postPrices[3]];
+        if (okArr(s.modelPrices)) state.modelPrices = [0, s.modelPrices[1], s.modelPrices[2], s.modelPrices[3]];
+        ['optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((k) => { state[k] = !!s[k]; });
+        [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100]].forEach(([k, lo, hi]) => {
+          if (Number.isFinite(s[k])) state[k] = Math.min(hi, Math.max(lo, s[k]));
+        });
+        if (s.currency && CURRENCIES[s.currency]) state.currency = s.currency;
+        if (s.fx && typeof s.fx === 'object') {
+          Object.keys(state.fx).forEach((k) => { if (Number.isFinite(s.fx[k]) && s.fx[k] > 0) state.fx[k] = s.fx[k]; });
+        }
         if (typeof s.clientTitle === 'string') state.clientTitle = s.clientTitle.slice(0, 120);
         if (typeof s.clientName === 'string') state.clientName = s.clientName.slice(0, 120);
         if (typeof s.clientNote === 'string') state.clientNote = s.clientNote.slice(0, 500);
+        if (typeof s.brandName === 'string') state.brandName = s.brandName.slice(0, 60);
+        if (typeof s.brandEmail === 'string') state.brandEmail = s.brandEmail.slice(0, 80);
+        if (typeof s.brandPhone === 'string') state.brandPhone = s.brandPhone.slice(0, 40);
+        if (typeof s.offerNo === 'string') state.offerNo = s.offerNo.slice(0, 30);
+        if (Number.isFinite(s.validDays)) state.validDays = Math.min(365, Math.max(0, Math.round(s.validDays)));
+        if (typeof s.quoteDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.quoteDate)) state.quoteDate = s.quoteDate;
+        else if (s.quoteDate === '') state.quoteDate = '';
       } catch (e) { /* хранилище недоступно — используем значения по умолчанию */ }
     }
 
@@ -653,8 +845,11 @@
     }
 
     function formatHours(hours) {
-      const safe = Number.isFinite(hours) ? hours : 0;
-      return `${safe.toFixed(1).replace('.', ',')} ч`;
+      const t = Math.round((Number.isFinite(hours) ? hours : 0) * 60);
+      const h = Math.floor(t / 60);
+      const m = t % 60;
+      if (h === 0) return `${m} мин`;
+      return m === 0 ? `${h} ч` : `${h} ч ${m} мин`;
     }
 
     function formatMarkup(mult) {
@@ -672,32 +867,51 @@
       return Math.min(max, Math.max(min, Number(n.toFixed(4))));
     }
 
+    function discountForQty(q) {
+      for (const t of DISCOUNT_TIERS) if (q >= t.min) return t.pct;
+      return 0;
+    }
+
     function calculateForGroup(group, params) {
-      const effectivePlasticRate = params.spool === 'client' ? 0 : rateOf(group).plastic;
-      const printerRate = rateOf(group).printer;
+      const rt = rateOf(group);
+      const effectivePlasticRate = params.spool === 'client' ? 0 : rt.plastic;
+      const printerRate = rt.printer;
 
       const plasticCostUnit = params.weight * effectivePlasticRate;
       const machineCostUnit = params.hours * printerRate;
-      const unitCost = plasticCostUnit + machineCostUnit;
+      const electricCostUnit = params.optElectric ? params.hours * (params.powerW / 1000) * params.tariff : 0;
+      const wearCostUnit = params.optWear ? params.hours * params.wearRate : 0;
+      const baseUnit = plasticCostUnit + machineCostUnit + electricCostUnit + wearCostUnit;
+      const defectCostUnit = params.optDefect ? (baseUnit * params.defectPct) / 100 : 0;
+      const unitCost = baseUnit + defectCostUnit;
       const batchDirectCost = unitCost * params.qty;
 
       const printedUnitPrice = unitCost * params.markup;
       const printedBatchSubtotal = printedUnitPrice * params.qty;
-
       const amsSurcharge = params.optAms ? printedBatchSubtotal * (EXTRAS.amsMultiplier - 1) : 0;
-      const postBatchCost = params.optPost ? EXTRAS.postPerUnit * params.qty : 0;
-      const modelingBatchCost = params.optModeling ? EXTRAS.modelingOnce : 0;
+      const postUnitPrice = params.postLevel > 0 ? params.postPrices[params.postLevel] : 0;
+      const postBatchCost = postUnitPrice * params.qty;
+      const modelingBatchCost = params.modelLevel > 0 ? params.modelPrices[params.modelLevel] : 0;
 
-      const batchTotalPrice = printedBatchSubtotal + amsSurcharge + postBatchCost + modelingBatchCost;
+      const perPieceSum = printedBatchSubtotal + amsSurcharge + postBatchCost;
+      const discountPct = params.optDiscount ? discountForQty(params.qty) : 0;
+      const discountAmount = (perPieceSum * discountPct) / 100;
+      const beforeMin = perPieceSum - discountAmount + modelingBatchCost;
+      const minTopUp = params.optMin && beforeMin < params.minPrice ? params.minPrice - beforeMin : 0;
+
+      const batchTotalPrice = beforeMin + minTopUp;
+      const vatAmount = params.optVat ? (batchTotalPrice * params.vatPct) / 100 : 0;
+      const grossTotal = batchTotalPrice + vatAmount;
       const unitFinalPrice = params.qty > 0 ? batchTotalPrice / params.qty : 0;
 
       const orderProfit = batchTotalPrice - batchDirectCost;
       const marginPct = batchTotalPrice > 0 ? (orderProfit / batchTotalPrice) * 100 : 0;
 
       return {
-        group, effectivePlasticRate, printerRate, plasticCostUnit, machineCostUnit, unitCost,
-        batchDirectCost, printedUnitPrice, printedBatchSubtotal, amsSurcharge, postBatchCost,
-        modelingBatchCost, batchTotalPrice, unitFinalPrice, orderProfit, marginPct,
+        group, effectivePlasticRate, printerRate, plasticCostUnit, machineCostUnit, electricCostUnit, wearCostUnit,
+        defectCostUnit, unitCost, batchDirectCost, printedUnitPrice, printedBatchSubtotal, amsSurcharge,
+        postUnitPrice, postBatchCost, modelingBatchCost, discountPct, discountAmount, minTopUp,
+        batchTotalPrice, vatAmount, grossTotal, unitFinalPrice, orderProfit, marginPct,
       };
     }
 
@@ -885,8 +1099,10 @@
       document.getElementById('weightSlider').value = state.weight;
       document.getElementById('weightNumber').value = state.weight;
 
-      document.getElementById('hoursSlider').value = state.hours;
-      document.getElementById('hoursNumber').value = state.hours.toFixed(1);
+      const totalMin = Math.round(state.hours * 60);
+      document.getElementById('hoursSlider').value = totalMin;
+      document.getElementById('hoursNumber').value = Math.floor(totalMin / 60);
+      document.getElementById('minutesNumber').value = totalMin % 60;
 
       document.getElementById('markupSlider').value = state.markup;
       document.getElementById('markupNumber').value = state.markup;
@@ -894,17 +1110,26 @@
       document.getElementById('qtySlider').value = state.qty;
       document.getElementById('qtyNumber').value = state.qty;
 
-      document.getElementById('optAms').checked = state.optAms;
-      document.getElementById('optPost').checked = state.optPost;
-      document.getElementById('optModeling').checked = state.optModeling;
+      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((id) => {
+        document.getElementById(id).checked = state[id];
+      });
+      [['powerW'], ['tariff'], ['wearRate'], ['defectPct'], ['minPrice'], ['vatPct']].forEach(([k]) => {
+        const el = document.getElementById(k);
+        if (el.value === '' || Number(el.value) !== state[k]) el.value = state[k];
+      });
+      document.getElementById('currencySelect').value = state.currency;
+      document.getElementById('fxWrap').classList.toggle('hidden', state.currency === 'EUR');
+      document.getElementById('fxCode').textContent = state.currency;
+      if (state.currency !== 'EUR') document.getElementById('fxInput').value = state.fx[state.currency];
+      renderServiceOptions();
 
       const searchInput = document.getElementById('filamentSearchInput');
       if (searchInput.value !== state.searchQuery) {
         searchInput.value = state.searchQuery;
       }
-      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote']].forEach(([id, key]) => {
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote'], ['clientOfferInput', 'offerNo'], ['validDaysInput', 'validDays'], ['brandNameInput', 'brandName'], ['brandEmailInput', 'brandEmail'], ['brandPhoneInput', 'brandPhone']].forEach(([id, key]) => {
         const el = document.getElementById(id);
-        if (el && el.value !== state[key]) el.value = state[key];
+        if (el && String(el.value) !== String(state[key])) el.value = state[key];
       });
       const clearBtn = document.getElementById('clearSearchBtn');
       if (state.searchQuery.trim().length > 0) {
@@ -917,117 +1142,123 @@
     function updateCalculationsOnly() {
       const activeGroup = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
       const res = calculateForGroup(activeGroup, state);
+      const $ = (id) => document.getElementById(id);
+      const show = (id, on) => $(id).classList.toggle('hidden', !on);
 
-      document.getElementById('activeRatesPill').textContent =
-        `Материал: ${formatNum(res.effectivePlasticRate, 3)} €/г · Станок: ${formatNum(res.printerRate, 2)} €/ч`;
-      document.getElementById('selectedGroupShortBadge').textContent = activeGroup.shortName;
+      $('activeRatesPill').textContent =
+        `Материал: ${formatNum(res.effectivePlasticRate, 4)} €/г · Станок: ${formatNum(res.printerRate, 2)} €/ч`;
+      $('selectedGroupShortBadge').textContent = activeGroup.shortName;
 
-      document.getElementById('unitCostValue').textContent = formatEuro(res.unitCost);
-      document.getElementById('unitCostFormulaHint').textContent =
-        `Материал ${formatEuro(res.plasticCostUnit)} + станок ${formatEuro(res.machineCostUnit)}`;
+      $('unitCostValue').textContent = formatEuro(res.unitCost);
+      $('unitCostFormulaHint').textContent =
+        `Материал ${formatEuro(res.plasticCostUnit)} + станок ${formatEuro(res.machineCostUnit)}` +
+        (res.electricCostUnit + res.wearCostUnit + res.defectCostUnit > 0 ? ' + расходы' : '');
 
-      document.getElementById('markupBadge').textContent = formatMarkup(state.markup);
-      document.getElementById('unitPriceValue').textContent = formatEuro(res.unitFinalPrice);
+      $('markupBadge').textContent = formatMarkup(state.markup);
+      $('unitPriceValue').textContent = formatEuro(res.unitFinalPrice);
 
-      const hasAnyExtra = state.optAms || state.optPost || state.optModeling;
-      document.getElementById('unitPriceSubHint').textContent = hasAnyExtra
+      const hasAnyExtra = state.optAms || state.postLevel > 0 || state.modelLevel > 0 || res.discountPct > 0 || res.minTopUp > 0;
+      $('unitPriceSubHint').textContent = hasAnyExtra
         ? 'С учётом выбранных дополнительных услуг'
         : `Себестоимость ${formatEuro(res.unitCost)} × ${formatMarkup(state.markup)}`;
 
-      document.getElementById('orderProfitValue').textContent = formatEuro(res.orderProfit);
-      document.getElementById('marginBadge').textContent = `${formatNum(res.marginPct, 1)}%`;
+      $('orderProfitValue').textContent = formatEuro(res.orderProfit);
+      $('marginBadge').textContent = `${formatNum(res.marginPct, 1)}%`;
 
-      document.getElementById('breakdownPlasticRate').textContent =
-        `(${state.weight} г × ${formatNum(res.effectivePlasticRate, 3)} €/г)`;
-      document.getElementById('breakdownPlasticVal').textContent = formatEuro(res.plasticCostUnit);
+      // Разбивка
+      $('breakdownPlasticRate').textContent = `(${state.weight} г × ${formatNum(res.effectivePlasticRate, 4)} €/г)`;
+      $('breakdownPlasticVal').textContent = formatEuro(res.plasticCostUnit);
+      $('breakdownTimeRate').textContent = `(${formatHours(state.hours)} × ${formatNum(res.printerRate, 2)} €/ч)`;
+      $('breakdownTimeVal').textContent = formatEuro(res.machineCostUnit);
 
-      document.getElementById('breakdownTimeRate').textContent =
-        `(${formatHours(state.hours)} × ${formatNum(res.printerRate, 2)} €/ч)`;
-      document.getElementById('breakdownTimeVal').textContent = formatEuro(res.machineCostUnit);
+      show('rowElectric', state.optElectric);
+      $('breakdownElectricRate').textContent = `(${formatHours(state.hours)} × ${state.powerW} Вт × ${formatNum(state.tariff, 2)} €/кВт·ч)`;
+      $('breakdownElectricVal').textContent = formatEuro(res.electricCostUnit);
+      show('rowWear', state.optWear);
+      $('breakdownWearRate').textContent = `(${formatHours(state.hours)} × ${formatNum(state.wearRate, 2)} €/ч)`;
+      $('breakdownWearVal').textContent = formatEuro(res.wearCostUnit);
+      show('rowDefect', state.optDefect);
+      $('breakdownDefectRate').textContent = `(+${formatNum(state.defectPct, 1)}%)`;
+      $('breakdownDefectVal').textContent = formatEuro(res.defectCostUnit);
 
-      document.getElementById('breakdownUnitCostVal').textContent = formatEuro(res.unitCost);
+      $('breakdownUnitCostVal').textContent = formatEuro(res.unitCost);
+      $('breakdownMarkupLabel').textContent = `(${formatMarkup(state.markup)} × ${state.qty} шт.)`;
+      $('breakdownPrintedSubtotalVal').textContent = formatEuro(res.printedBatchSubtotal);
 
-      document.getElementById('breakdownMarkupLabel').textContent =
-        `(${formatMarkup(state.markup)} × ${state.qty} шт.)`;
-      document.getElementById('breakdownPrintedSubtotalVal').textContent = formatEuro(res.printedBatchSubtotal);
+      show('rowAms', state.optAms);
+      $('breakdownAmsVal').textContent = `+${formatEuro(res.amsSurcharge)}`;
 
-      const rowAms = document.getElementById('rowAms');
-      if (state.optAms) {
-        rowAms.classList.remove('hidden');
-        document.getElementById('breakdownAmsVal').textContent = `+${formatEuro(res.amsSurcharge)}`;
-      } else {
-        rowAms.classList.add('hidden');
-      }
+      show('rowPostProcessing', state.postLevel > 0);
+      $('breakdownPostLabel').textContent = `Постобработка: ${POST_LEVELS[state.postLevel].name}`;
+      $('breakdownPostFormula').textContent = `(${formatEuro(res.postUnitPrice)} × ${state.qty} шт.)`;
+      $('breakdownPostVal').textContent = `+${formatEuro(res.postBatchCost)}`;
 
-      const rowPost = document.getElementById('rowPostProcessing');
-      if (state.optPost) {
-        rowPost.classList.remove('hidden');
-        document.getElementById('breakdownPostFormula').textContent = `(3,00 € × ${state.qty} шт.)`;
-        document.getElementById('breakdownPostVal').textContent = `+${formatEuro(res.postBatchCost)}`;
-      } else {
-        rowPost.classList.add('hidden');
-      }
+      show('rowDiscount', res.discountPct > 0);
+      $('breakdownDiscountLabel').textContent = `Скидка за партию (−${res.discountPct}%, ${state.qty} шт.)`;
+      $('breakdownDiscountVal').textContent = `−${formatEuro(res.discountAmount)}`;
+      $('discountNow').textContent = state.optDiscount ? `−${discountForQty(state.qty)}%` : '0%';
 
-      const rowModeling = document.getElementById('rowModeling');
-      if (state.optModeling) {
-        rowModeling.classList.remove('hidden');
-        document.getElementById('breakdownModelingVal').textContent = `+${formatEuro(res.modelingBatchCost)}`;
-      } else {
-        rowModeling.classList.add('hidden');
-      }
+      show('rowModeling', state.modelLevel > 0);
+      $('breakdownModelingLabel').textContent = `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name} (разово)`;
+      $('breakdownModelingVal').textContent = `+${formatEuro(res.modelingBatchCost)}`;
 
-      document.getElementById('breakdownBatchTotalVal').textContent = formatEuro(res.batchTotalPrice);
+      show('rowMin', res.minTopUp > 0);
+      $('breakdownMinLabel').textContent = `Доплата до минимальной цены заказа (${formatEuro(state.minPrice)})`;
+      $('breakdownMinVal').textContent = `+${formatEuro(res.minTopUp)}`;
 
+      $('breakdownBatchTotalVal').textContent = formatEuro(res.batchTotalPrice);
+      show('rowVat', state.optVat);
+      $('breakdownVatLabel').textContent = `НДС ${formatNum(state.vatPct, 1)}%`;
+      $('breakdownVatVal').textContent = `+${formatEuro(res.vatAmount)}`;
+      show('rowGross', state.optVat);
+      $('breakdownGrossVal').textContent = formatEuro(res.grossTotal);
+
+      // Полоса пропорций
       const denom = res.batchTotalPrice > 0 ? res.batchTotalPrice : 1;
       const totalPlastic = res.plasticCostUnit * state.qty;
-      const totalMachine = res.machineCostUnit * state.qty;
+      const totalMachine = (res.machineCostUnit + res.electricCostUnit + res.wearCostUnit + res.defectCostUnit) * state.qty;
       const pPct = Math.max(0, Math.min(100, (totalPlastic / denom) * 100));
       const tPct = Math.max(0, Math.min(100 - pPct, (totalMachine / denom) * 100));
       const mPct = Math.max(0, 100 - pPct - tPct);
+      $('barPlastic').style.width = `${pPct}%`;
+      $('barTime').style.width = `${tPct}%`;
+      $('barProfit').style.width = `${mPct}%`;
 
-      document.getElementById('barPlastic').style.width = `${pPct}%`;
-      document.getElementById('barTime').style.width = `${tPct}%`;
-      document.getElementById('barProfit').style.width = `${mPct}%`;
-
-      document.getElementById('batchQtyLabel').textContent = `${state.qty} шт.`;
-      document.getElementById('batchSummaryMeta').textContent =
+      // Сводка
+      $('batchQtyLabel').textContent = `${state.qty} шт.`;
+      $('batchSummaryMeta').textContent =
         `Общий вес: ${(state.weight * state.qty).toLocaleString('ru-RU')} г · Общее время: ${formatHours(state.hours * state.qty)} · Катушка: ${spoolText(activeGroup)}`;
-      document.getElementById('batchCostValue').textContent = formatEuro(res.batchDirectCost);
-      document.getElementById('batchUnitPriceValue').textContent = formatEuro(res.unitFinalPrice);
-      document.getElementById('batchPriceValue').textContent = formatEuro(res.batchTotalPrice);
-      document.getElementById('batchProfitValue').textContent = formatEuro(res.orderProfit);
+      $('batchCostValue').textContent = formatEuro(res.batchDirectCost);
+      $('batchUnitPriceValue').textContent = formatEuro(res.unitFinalPrice);
+      $('batchPriceValue').textContent = formatEuro(res.batchTotalPrice);
+      show('rowBatchGross', state.optVat);
+      $('batchGrossValue').textContent = formatEuro(res.grossTotal);
+      $('batchProfitValue').textContent = formatEuro(res.orderProfit);
 
       renderTechnicalReminder(activeGroup);
 
       const spoolLabel = state.spool === 'client' ? 'Пластик заказчика (0 €/г)' : 'Свой пластик';
       const extrasList = [];
       if (state.optAms) extrasList.push('AMS +15%');
-      if (state.optPost) extrasList.push('постобработка');
-      if (state.optModeling) extrasList.push('3D-моделирование');
+      if (state.postLevel > 0) extrasList.push('постобработка');
+      if (state.modelLevel > 0) extrasList.push('моделирование');
+      if (state.optElectric || state.optWear || state.optDefect) extrasList.push('расходы');
+      if (res.discountPct > 0) extrasList.push(`скидка ${res.discountPct}%`);
+      if (state.optMin) extrasList.push('мин. цена');
+      if (state.optVat) extrasList.push('НДС');
       const extrasSuffix = extrasList.length ? ` · Опции: ${extrasList.join(', ')}` : '';
-
-      document.getElementById('matrixContextText').textContent =
+      $('matrixContextText').textContent =
         `Вес: ${state.weight} г · Время: ${formatHours(state.hours)} · Наценка: ${formatMarkup(state.markup)} · ${spoolLabel} · Партия: ${state.qty} шт.${extrasSuffix}`;
 
-      const tbody = document.getElementById('comparisonTableBody');
+      const tbody = $('comparisonTableBody');
       tbody.innerHTML = '';
-
       FILAMENT_GROUPS.forEach((grp) => {
         const item = calculateForGroup(grp, state);
         const isSelected = grp.id === state.groupId;
-
         const tr = document.createElement('tr');
-        tr.className = isSelected
-          ? 'bg-slate-900/[0.045] font-medium cursor-pointer'
-          : 'hover:bg-slate-50/90 transition cursor-pointer';
-
-        tr.addEventListener('click', () => {
-          state.groupId = grp.id;
-          render();
-        });
-
+        tr.className = isSelected ? 'bg-slate-900/[0.045] font-medium cursor-pointer' : 'hover:bg-slate-50/90 transition cursor-pointer';
+        tr.addEventListener('click', () => { state.groupId = grp.id; render(); });
         const previewFilaments = grp.filaments.slice(0, 5).join(', ') + (grp.filaments.length > 5 ? ` +${grp.filaments.length - 5}` : '');
-
         tr.innerHTML = `
           <td class="py-3.5 pr-4">
             <div class="flex items-start gap-2.5">
@@ -1050,7 +1281,6 @@
           <td class="py-3.5 px-3 text-right text-slate-900 font-bold whitespace-nowrap">${formatEuro(item.batchTotalPrice)}</td>
           <td class="py-3.5 pl-3 text-right text-emerald-600 font-semibold whitespace-nowrap">${formatEuro(item.orderProfit)}</td>
         `;
-
         tbody.appendChild(tr);
       });
 
@@ -1122,24 +1352,26 @@
 
       const hoursSlider = document.getElementById('hoursSlider');
       const hoursNumber = document.getElementById('hoursNumber');
+      const minutesNumber = document.getElementById('minutesNumber');
+      const setTotalMinutes = (t) => {
+        const v = Math.min(6000, Math.max(0, Math.round(t)));
+        state.hours = v / 60;
+      };
       hoursSlider.addEventListener('input', (e) => {
-        state.hours = clampStep(e.target.value, 0, 100, 0.1);
+        setTotalMinutes(Number(e.target.value));
         render();
       });
-      hoursNumber.addEventListener('input', (e) => {
-        if (e.target.value === '') return;
-        const n = Number(String(e.target.value).replace(',', '.'));
-        if (Number.isFinite(n)) {
-          state.hours = Math.min(100, Math.max(0, Math.round(n * 10) / 10));
-          hoursSlider.value = state.hours;
-          updateCalculationsOnly();
-        }
-      });
-      hoursNumber.addEventListener('change', (e) => {
-        const raw = String(e.target.value).replace(',', '.');
-        state.hours = clampStep(raw, 0, 100, 0.1);
-        render();
-      });
+      const onHM = () => {
+        const h = parseInt(hoursNumber.value, 10);
+        const m = parseInt(minutesNumber.value, 10);
+        setTotalMinutes((Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0));
+        hoursSlider.value = Math.round(state.hours * 60);
+        updateCalculationsOnly();
+      };
+      hoursNumber.addEventListener('input', onHM);
+      minutesNumber.addEventListener('input', onHM);
+      hoursNumber.addEventListener('change', () => { onHM(); render(); });
+      minutesNumber.addEventListener('change', () => { onHM(); render(); });
 
       const markupSlider = document.getElementById('markupSlider');
       const markupNumber = document.getElementById('markupNumber');
@@ -1189,45 +1421,382 @@
         render();
       });
 
-      document.getElementById('optAms').addEventListener('change', (e) => {
-        state.optAms = e.target.checked;
-        updateCalculationsOnly();
-      });
-      document.getElementById('optPost').addEventListener('change', (e) => {
-        state.optPost = e.target.checked;
-        updateCalculationsOnly();
-      });
-      document.getElementById('optModeling').addEventListener('change', (e) => {
-        state.optModeling = e.target.checked;
-        updateCalculationsOnly();
-      });
-
       document.getElementById('resetBtn').addEventListener('click', () => {
-        Object.assign(state, DEFAULTS, { weight: 0, hours: 0 });
+        Object.assign(state, {
+          groupId: 'group_1', spool: 'mine', weight: 0, hours: 0, markup: 2.5, qty: 1,
+          optAms: false, postLevel: 0, modelLevel: 0,
+          optElectric: false, optWear: false, optDefect: false, optDiscount: false, optMin: false, optVat: false,
+          searchQuery: '', clientTitle: '', clientName: '', clientNote: '', offerNo: '', quoteDate: '',
+        });
         render();
       });
     }
 
     /* ---------- Редактор цен групп ---------- */
+    function rateCalcText(r) {
+      return `= ${formatNum(r.spoolG > 0 ? r.spoolPrice / r.spoolG : 0, 4)} €/г`;
+    }
+
     function renderRateEditor() {
       const box = document.getElementById('ratesEditor');
-      const inputCls = 'rate-input no-spinner w-full px-2.5 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400';
+      const inputCls = 'no-spinner w-20 px-2.5 py-1.5 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400';
       box.innerHTML = FILAMENT_GROUPS.map((g) => {
         const r = rates[g.id];
         return `
-          <div class="grid grid-cols-2 sm:grid-cols-12 items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200/80">
-            <div class="col-span-2 sm:col-span-6 text-xs font-semibold text-slate-800">Группа ${g.number} · ${g.title}</div>
-            <label class="sm:col-span-3 flex items-center gap-1.5 text-xs text-slate-500">
-              <input type="number" inputmode="decimal" min="0" step="0.001" value="${r.plastic}" data-group="${g.id}" data-kind="plastic" class="${inputCls}" aria-label="Цена пластика, €/г, группа ${g.number}" /> €/г
-            </label>
-            <label class="sm:col-span-3 flex items-center gap-1.5 text-xs text-slate-500">
-              <input type="number" inputmode="decimal" min="0" step="0.01" value="${r.printer}" data-group="${g.id}" data-kind="printer" class="${inputCls}" aria-label="Стоимость часа принтера, €/ч, группа ${g.number}" /> €/ч
-            </label>
+          <div class="p-2.5 rounded-xl bg-white border border-slate-200/80 space-y-2">
+            <div class="text-xs font-semibold text-slate-800">Группа ${g.number} · ${g.title}</div>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500">
+              <span class="flex items-center gap-1.5">Катушка
+                <input type="number" inputmode="decimal" min="0" step="0.5" value="${r.spoolPrice}" data-group="${g.id}" data-kind="spoolPrice" class="${inputCls}" aria-label="Цена катушки, €, группа ${g.number}" /> €
+                <select data-group="${g.id}" data-kind="spoolG" class="px-2 py-1.5 text-sm bg-white border border-slate-200 rounded-lg" aria-label="Размер катушки, группа ${g.number}">
+                  <option value="1000" ${r.spoolG === 1000 ? 'selected' : ''}>1 кг</option>
+                  <option value="750" ${r.spoolG === 750 ? 'selected' : ''}>750 г</option>
+                </select>
+              </span>
+              <span id="rateCalc_${g.id}" class="font-medium text-slate-700">${rateCalcText(r)}</span>
+              <span class="flex items-center gap-1.5">Станок
+                <input type="number" inputmode="decimal" min="0" step="0.01" value="${r.printer}" data-group="${g.id}" data-kind="printer" class="${inputCls}" aria-label="Стоимость часа принтера, €/ч, группа ${g.number}" /> €/ч
+              </span>
+            </div>
           </div>`;
       }).join('');
     }
 
+    /* ---------- Номер предложения ---------- */
+    const SEQ_KEY = 'calc3d_seq_v1';
+    const HIST_KEY = 'calc3d_history_v1';
+
+    function getSeq() {
+      try { const n = parseInt(localStorage.getItem(SEQ_KEY), 10); return Number.isFinite(n) && n > 0 ? n : 1; } catch (e) { return 1; }
+    }
+    function setSeq(n) { try { localStorage.setItem(SEQ_KEY, String(n)); } catch (e) { /* ignore */ } }
+    function autoOfferNo() { return `КП-${new Date().getFullYear()}-${String(getSeq()).padStart(3, '0')}`; }
+    function effectiveOfferNo() { return state.offerNo.trim() || autoOfferNo(); }
+
+    /* ---------- История заказов ---------- */
+    function getHistory() {
+      try {
+        const h = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+        return Array.isArray(h) ? h : [];
+      } catch (e) { return []; }
+    }
+    function setHistory(h) {
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 300))); }
+      catch (e) { showToast('Не удалось сохранить: нет места в памяти'); }
+    }
+    function isoDate(ts) {
+      const d = new Date(ts);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function esc(t) {
+      return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    function saveToHistory() {
+      const { grand } = clientData();
+      const no = effectiveOfferNo();
+      const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
+      const snap = JSON.parse(JSON.stringify(state));
+      ['searchQuery', 'brandName', 'brandEmail', 'brandPhone', 'validDays'].forEach((k) => delete snap[k]);
+      snap.offerNo = no;
+      const entry = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        ts: Date.now(),
+        title: state.clientTitle.trim() || `${g.title}, ${state.weight} г × ${state.qty} шт.`,
+        customer: state.clientName.trim(),
+        offerNo: no,
+        qty: state.qty,
+        totalText: fmtCur(grand),
+        snapshot: { state: snap, rates: JSON.parse(JSON.stringify(rates)) },
+      };
+      const h = getHistory();
+      const idx = h.findIndex((x) => x.offerNo === no);
+      if (idx >= 0) {
+        entry.id = h[idx].id;
+        h.splice(idx, 1);
+        h.unshift(entry);
+        setHistory(h);
+        showToast(`Обновлено в истории: № ${no}`);
+      } else {
+        h.unshift(entry);
+        setHistory(h);
+        if (no === autoOfferNo()) setSeq(getSeq() + 1);
+        showToast(`Сохранено в историю: № ${no}`);
+      }
+      state.offerNo = no;
+      if (!state.quoteDate) state.quoteDate = isoDate(entry.ts);
+      saveState();
+      syncInputsUI();
+      renderClientView();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const q = document.getElementById('historySearch').value.trim().toLowerCase();
+      const all = getHistory();
+      const items = all.filter((x) => !q || `${x.title} ${x.customer} ${x.offerNo}`.toLowerCase().includes(q));
+      document.getElementById('historyCount').textContent = all.length ? `Сохранено заказов: ${all.length}` : 'Пока пусто. Нажмите «Сохранить расчёт в историю».';
+      list.innerHTML = items.map((x) => `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold text-slate-900 truncate">${esc(x.title)}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${new Date(x.ts).toLocaleDateString('ru-RU')} · № ${esc(x.offerNo)}${x.customer ? ` · ${esc(x.customer)}` : ''} · ${x.qty} шт.</div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-sm font-bold text-slate-900 mr-1">${esc(x.totalText)}</span>
+            <button type="button" data-act="open" data-id="${x.id}" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 cursor-pointer">Открыть</button>
+            <button type="button" data-act="delete" data-id="${x.id}" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">Удалить</button>
+          </div>
+        </div>`).join('') || (all.length ? '<p class="text-xs text-slate-500">Ничего не найдено.</p>' : '');
+    }
+
+    function openFromHistory(id) {
+      const x = getHistory().find((e) => e.id === id);
+      if (!x || !x.snapshot) return;
+      if (!window.confirm('Открыть этот расчёт? Текущие параметры и цены будут заменены значениями из сохранённого заказа.')) return;
+      applyState(x.snapshot.state);
+      state.offerNo = x.offerNo;
+      state.quoteDate = isoDate(x.ts);
+      state.searchQuery = '';
+      if (x.snapshot.rates) { applyRatesObj(x.snapshot.rates); saveRates(); renderRateEditor(); }
+      render();
+      window.scrollTo(0, 0);
+      showToast(`Открыт расчёт № ${x.offerNo}`);
+    }
+
+    function deleteFromHistory(id) {
+      if (!window.confirm('Удалить этот заказ из истории?')) return;
+      setHistory(getHistory().filter((e) => e.id !== id));
+      renderHistory();
+    }
+
+    /* ---------- Экспорт и импорт ---------- */
+    function applyRatesObj(r) {
+      if (!r || typeof r !== 'object') return;
+      FILAMENT_GROUPS.forEach((g) => {
+        const x = r[g.id];
+        if (!x) return;
+        if (Number.isFinite(x.spoolPrice) && x.spoolPrice >= 0) rates[g.id].spoolPrice = x.spoolPrice;
+        if (x.spoolG === 750 || x.spoolG === 1000) rates[g.id].spoolG = x.spoolG;
+        if (Number.isFinite(x.printer) && x.printer >= 0) rates[g.id].printer = x.printer;
+      });
+    }
+
+    function downloadBlob(blob, name) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    function exportData() {
+      const { searchQuery, ...st } = state;
+      const payload = { app: 'calc3d', format: 1, exportedAt: new Date().toISOString(), state: st, rates, history: getHistory(), offerSeq: getSeq() };
+      downloadBlob(new Blob([JSON.stringify(payload, null, 1)], { type: 'application/json' }), `calc3d-backup-${isoDate(Date.now())}.json`);
+      showToast('Резервная копия скачана');
+    }
+
+    async function importData(file) {
+      try {
+        const p = JSON.parse(await file.text());
+        if (!p || p.app !== 'calc3d') throw new Error('format');
+        if (!window.confirm('Загрузить данные из файла? Ваши цены и настройки будут заменены, история объединится с текущей.')) return;
+        applyState(p.state);
+        applyRatesObj(p.rates);
+        saveRates();
+        const cur = getHistory();
+        const ids = new Set(cur.map((e) => e.id));
+        const incoming = (Array.isArray(p.history) ? p.history : []).filter((e) => e && typeof e.id === 'string' && Number.isFinite(e.ts) && e.snapshot && !ids.has(e.id));
+        setHistory(cur.concat(incoming).sort((a, b) => b.ts - a.ts));
+        if (Number.isFinite(p.offerSeq) && p.offerSeq > getSeq()) setSeq(Math.round(p.offerSeq));
+        renderRateEditor();
+        render();
+        renderHistory();
+        showToast(`Данные загружены (добавлено заказов: ${incoming.length})`);
+      } catch (e) {
+        showToast('Не удалось прочитать файл резервной копии');
+      }
+    }
+
+    /* ---------- Смета: картинка и PDF ---------- */
+    async function renderQuoteCanvas() {
+      if (typeof window.html2canvas !== 'function') {
+        showToast('Библиотека не загружена. Откройте приложение с интернетом один раз.');
+        return null;
+      }
+      renderClientView();
+      return window.html2canvas(document.getElementById('clientCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+    }
+
+    function quoteFileName(ext) {
+      return `smeta-${effectiveOfferNo().replace(/КП/g, 'KP').replace(/[^\w.-]+/g, '_')}.${ext}`;
+    }
+
+    async function shareClientImage() {
+      try {
+        const canvas = await renderQuoteCanvas();
+        if (!canvas) return;
+        const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+        if (!blob) throw new Error('blob');
+        const file = new File([blob], quoteFileName('png'), { type: 'image/png' });
+        const { grand } = clientData();
+        const title = state.clientTitle.trim() || 'Расчёт стоимости 3D-печати';
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title, text: `Смета № ${effectiveOfferNo()}: ${fmtCur(grand)}` });
+          } catch (e) { /* пользователь закрыл окно */ }
+        } else {
+          downloadBlob(blob, quoteFileName('png'));
+          showToast('Картинка сметы скачана');
+        }
+      } catch (e) {
+        showToast('Не удалось подготовить картинку');
+      }
+    }
+
+    async function downloadClientPdf() {
+      try {
+        const canvas = await renderQuoteCanvas();
+        if (!canvas) return;
+        if (!window.jspdf || !window.jspdf.jsPDF) { showToast('Библиотека PDF не загружена. Откройте приложение с интернетом один раз.'); return; }
+        const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = 210, pageH = 297, margin = 15;
+        let w = pageW - margin * 2;
+        let h = (canvas.height * w) / canvas.width;
+        if (h > pageH - margin * 2) { h = pageH - margin * 2; w = (canvas.width * h) / canvas.height; }
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pageW - w) / 2, margin, w, h);
+        pdf.save(quoteFileName('pdf'));
+        showToast('PDF сохранён');
+      } catch (e) {
+        showToast('Не удалось создать PDF');
+      }
+    }
+
+    /* ---------- Услуги: постобработка и моделирование ---------- */
+    function optionRowHtml(kind, i, lvl, price, checked, step) {
+      const cls = checked ? 'border-slate-900 bg-white ring-1 ring-slate-900/10' : 'border-slate-200 bg-white/60';
+      const priceHtml = i > 0
+        ? `<span class="text-xs text-slate-400">+</span><input type="number" inputmode="decimal" min="0" step="${step}" value="${price}" data-svc="${kind}" data-idx="${i}" aria-label="Цена: ${lvl.name}" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /><span class="text-xs text-slate-500">€</span>`
+        : '<span class="text-xs text-slate-500">0 €</span>';
+      return `<label class="svc-row flex items-center justify-between gap-2 p-2 rounded-lg border ${cls} cursor-pointer" data-row="${i}">
+        <span class="flex items-center gap-2 min-w-0"><input type="radio" name="${kind}Level" value="${i}" ${checked ? 'checked' : ''} class="w-4 h-4 shrink-0 text-slate-900 focus:ring-slate-900" /><span class="text-sm text-slate-900">${lvl.name}</span></span>
+        <span class="flex items-center gap-1 shrink-0">${priceHtml}</span>
+      </label>`;
+    }
+
+    function renderServiceOptions() {
+      [['post', POST_LEVELS, state.postLevel, state.postPrices, 0.5], ['model', MODEL_LEVELS, state.modelLevel, state.modelPrices, 1]].forEach(([kind, levels, cur, prices, step]) => {
+        document.getElementById(`${kind}Options`).innerHTML = levels
+          .map((lvl, i) => optionRowHtml(kind, i, lvl, prices[i], i === cur, step))
+          .join('');
+      });
+    }
+
+    const INFO = {
+      post: {
+        title: 'Уровни постобработки',
+        html: `<div class="overflow-x-auto"><table class="w-full text-left text-xs">
+          <thead><tr class="border-b border-slate-200 text-slate-500"><th class="py-2 pr-3">Уровень</th><th class="py-2 pr-3">Что входит в работу</th><th class="py-2 whitespace-nowrap">Реальная цена за 1 шт.</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="py-2 pr-3 font-semibold">1. Базовая зачистка (механика)</td><td class="py-2 pr-3">Снятие поддержек и каймы, зачистка заусенцев, лёгкая подшлифовка стыков</td><td class="py-2 whitespace-nowrap">2–4 €</td></tr>
+            <tr><td class="py-2 pr-3 font-semibold">2. Подготовка под покраску / один цвет</td><td class="py-2 pr-3">Шлифовка слоёв, обезжиривание, аэрозольный грунт + покрытие в 1 цвет и лак из баллончика</td><td class="py-2 whitespace-nowrap">6–12 €</td></tr>
+            <tr><td class="py-2 pr-3 font-semibold">3. Ручная художественная роспись</td><td class="py-2 pr-3">Грунт + многоцветная роспись кистью/маркерами, проливка теней (wash), металлики, защитный лак</td><td class="py-2">15–35+ € (зависит от размера и детализации)</td></tr>
+          </tbody></table></div>
+          <p class="text-xs text-slate-500 mt-3">В калькуляторе по умолчанию стоят 3 / 8 / 18 € за деталь. Цену каждого уровня можно изменить, она сохранится.</p>`,
+      },
+      model: {
+        title: 'Ставки за 3D-моделирование',
+        html: `<p class="mb-2 font-medium text-slate-900">Почему это разумная середина:</p>
+          <ul class="space-y-2 text-sm">
+            <li><b>10 €</b>: обычно берут за простейшие геометрические детали (заглушка, проставка, шайба, табличка за 15–20 минут).</li>
+            <li><b>15 €</b>: оптимальная базовая ставка для типовой бытовой или автомобильной детали средней сложности (кронштейн, клипса, переходник).</li>
+            <li><b>25–30 € и выше</b>: за сложные корпуса, детали с криволинейными поверхностями, резьбами или сборкой из нескольких частей.</li>
+          </ul>
+          <p class="text-xs text-slate-500 mt-3">В калькуляторе по умолчанию стоят 10 / 15 / 30 €. Моделирование оплачивается один раз за заказ, скидка за партию на него не действует.</p>`,
+      },
+    };
+
+    function openInfo(key) {
+      document.getElementById('infoTitle').textContent = INFO[key].title;
+      document.getElementById('infoBody').innerHTML = INFO[key].html;
+      document.getElementById('infoModal').classList.remove('hidden');
+    }
+    function closeInfo() { document.getElementById('infoModal').classList.add('hidden'); }
+
+    function bindOptionEvents() {
+      ['post', 'model'].forEach((kind) => {
+        const box = document.getElementById(`${kind}Options`);
+        box.addEventListener('change', (e) => {
+          if (e.target.type === 'radio') {
+            state[`${kind}Level`] = Number(e.target.value);
+            renderServiceOptions();
+            updateCalculationsOnly();
+          }
+        });
+        box.addEventListener('input', (e) => {
+          const t = e.target;
+          if (t.type !== 'number') return;
+          const v = parseFloat(String(t.value).replace(',', '.'));
+          if (!Number.isFinite(v) || v < 0) return;
+          const idx = Number(t.dataset.idx);
+          state[`${kind}Prices`][idx] = v;
+          state[`${kind}Level`] = idx;
+          box.querySelectorAll('input[type=radio]').forEach((r, j) => { r.checked = j === idx; });
+          box.querySelectorAll('.svc-row').forEach((row) => {
+            const on = Number(row.dataset.row) === idx;
+            row.classList.toggle('border-slate-900', on);
+            row.classList.toggle('ring-1', on);
+            row.classList.toggle('border-slate-200', !on);
+          });
+          updateCalculationsOnly();
+        });
+      });
+
+      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((id) => {
+        document.getElementById(id).addEventListener('change', (e) => {
+          state[id] = e.target.checked;
+          updateCalculationsOnly();
+        });
+      });
+
+      [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100]].forEach(([id, lo, hi]) => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          const v = parseFloat(String(e.target.value).replace(',', '.'));
+          if (!Number.isFinite(v)) return;
+          state[id] = Math.min(hi, Math.max(lo, v));
+          updateCalculationsOnly();
+        });
+      });
+
+      document.getElementById('currencySelect').addEventListener('change', (e) => {
+        state.currency = e.target.value;
+        render();
+      });
+      document.getElementById('fxInput').addEventListener('input', (e) => {
+        const v = parseFloat(String(e.target.value).replace(',', '.'));
+        if (!Number.isFinite(v) || v <= 0 || state.currency === 'EUR') return;
+        state.fx[state.currency] = v;
+        updateCalculationsOnly();
+      });
+
+      document.querySelectorAll('[data-info]').forEach((b) => b.addEventListener('click', () => openInfo(b.dataset.info)));
+      document.getElementById('infoClose').addEventListener('click', closeInfo);
+      document.getElementById('infoModal').addEventListener('click', (e) => { if (e.target.id === 'infoModal') closeInfo(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeInfo(); });
+    }
+
     /* ---------- Экран для заказчика ---------- */
+    function fmtCur(v) {
+      const code = state.currency;
+      const rate = code === 'EUR' ? 1 : (state.fx[code] || 1);
+      return `${(v * rate).toFixed(2).replace('.', ',')} ${CURRENCIES[code] || '€'}`;
+    }
+
     function clientData() {
       const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
       const r = calculateForGroup(g, state);
@@ -1236,20 +1805,28 @@
       const info = [];
       if (state.weight > 0) info.push(`≈ ${state.weight} г`);
       if (state.hours > 0) info.push(`≈ ${formatHours(state.hours)}`);
-      const subParts = [`${state.qty} шт. × ${formatEuro(r.printedUnitPrice)}`];
+      const subParts = [`${state.qty} шт. × ${fmtCur(r.printedUnitPrice)}`];
       if (info.length) subParts.push(`на деталь: ${info.join(', ')}`);
       if (state.spool === 'client') subParts.push('пластик заказчика');
       lines.push({ title: `3D-печать · ${g.title}`, sub: subParts.join(' · '), sum: r.printedBatchSubtotal });
 
       if (state.optAms) lines.push({ title: 'Многоцветная печать (AMS)', sub: '', sum: r.amsSurcharge });
-      if (state.optPost) lines.push({ title: 'Постобработка', sub: `${state.qty} шт. × ${formatEuro(EXTRAS.postPerUnit)}`, sum: r.postBatchCost });
-      if (state.optModeling) lines.push({ title: '3D-моделирование по размерам заказчика', sub: 'разово', sum: r.modelingBatchCost });
+      if (state.postLevel > 0) lines.push({ title: `Постобработка: ${POST_LEVELS[state.postLevel].name}`, sub: `${state.qty} шт. × ${fmtCur(r.postUnitPrice)}`, sum: r.postBatchCost });
+      if (r.discountPct > 0) lines.push({ title: `Скидка за партию −${r.discountPct}%`, sub: '', sum: -r.discountAmount });
+      if (state.modelLevel > 0) lines.push({ title: `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name}`, sub: 'разово', sum: r.modelingBatchCost });
+      if (r.minTopUp > 0) lines.push({ title: 'Доплата до минимальной цены заказа', sub: '', sum: r.minTopUp });
 
-      return { r, lines };
+      const totals = [];
+      if (state.optVat) {
+        totals.push({ title: 'Сумма без НДС', sum: r.batchTotalPrice });
+        totals.push({ title: `НДС ${formatNum(state.vatPct, 1)}%`, sum: r.vatAmount });
+      }
+      const grand = state.optVat ? r.grossTotal : r.batchTotalPrice;
+      return { r, lines, totals, grand };
     }
 
     function renderClientView() {
-      const { r, lines } = clientData();
+      const { r, lines, totals, grand } = clientData();
       document.getElementById('clientHeading').textContent = state.clientTitle.trim() || '3D-печать на заказ';
       const cust = document.getElementById('clientCustomer');
       if (state.clientName.trim()) {
@@ -1258,20 +1835,35 @@
       } else {
         cust.classList.add('hidden');
       }
-      document.getElementById('clientDate').textContent = new Date().toLocaleDateString('ru-RU');
+      const qd = state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date();
+      document.getElementById('clientDate').textContent = `Дата: ${qd.toLocaleDateString('ru-RU')}`;
+      document.getElementById('clientOfferNo').textContent = `№ ${effectiveOfferNo()}`;
+      const validEl = document.getElementById('clientValid');
+      if (state.validDays > 0) {
+        const until = new Date(qd.getTime() + state.validDays * 86400000);
+        validEl.textContent = `Действительно до ${until.toLocaleDateString('ru-RU')}`;
+      } else {
+        validEl.textContent = '';
+      }
+      document.getElementById('clientBrandName').textContent = state.brandName.trim() || '3D-печать';
+      document.getElementById('clientBrandContacts').textContent =
+        [state.brandEmail.trim(), state.brandPhone.trim()].filter(Boolean).join(' · ');
 
-      document.getElementById('clientLines').innerHTML = lines.map((l) => `
+      const lineHtml = (l, cls) => `
         <div class="flex items-start justify-between gap-4 py-3">
           <div>
             <div class="font-medium text-slate-900">${l.title}</div>
             ${l.sub ? `<div class="text-xs text-slate-500 mt-0.5">${l.sub}</div>` : ''}
           </div>
-          <div class="font-semibold text-slate-900 whitespace-nowrap">${formatEuro(l.sum)}</div>
-        </div>`).join('');
+          <div class="font-semibold ${cls || 'text-slate-900'} whitespace-nowrap">${l.sum < 0 ? '−' : ''}${fmtCur(Math.abs(l.sum))}</div>
+        </div>`;
+      document.getElementById('clientLines').innerHTML =
+        lines.map((l) => lineHtml(l, l.sum < 0 ? 'text-rose-600' : '')).join('') +
+        totals.map((l) => lineHtml(l, 'text-slate-700')).join('');
 
-      document.getElementById('clientTotal').textContent = formatEuro(r.batchTotalPrice);
+      document.getElementById('clientTotal').textContent = fmtCur(grand);
       document.getElementById('clientUnitNote').textContent =
-        state.qty > 1 ? `В среднем ${formatEuro(r.unitFinalPrice)} за 1 шт.` : '';
+        state.qty > 1 ? `В среднем ${fmtCur(grand / state.qty)} за 1 шт.` : '';
 
       const noteEl = document.getElementById('clientNoteView');
       if (state.clientNote.trim()) {
@@ -1283,25 +1875,31 @@
     }
 
     function buildClientText() {
-      const { r, lines } = clientData();
+      const { lines, totals, grand } = clientData();
       const out = [];
       out.push('Расчёт стоимости 3D-печати');
       out.push(state.clientTitle.trim() || '3D-печать на заказ');
       if (state.clientName.trim()) out.push(`Заказчик: ${state.clientName.trim()}`);
-      out.push(`Дата: ${new Date().toLocaleDateString('ru-RU')}`);
+      out.push(`№ ${effectiveOfferNo()} от ${(state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date()).toLocaleDateString('ru-RU')}`);
+      if (state.validDays > 0) out.push(`Цена действительна ${state.validDays} дн.`);
+      if (state.brandName.trim() || state.brandEmail.trim()) out.push([state.brandName.trim(), state.brandEmail.trim(), state.brandPhone.trim()].filter(Boolean).join(' · '));
       out.push('');
-      lines.forEach((l) => out.push(`• ${l.title}${l.sub ? ` (${l.sub})` : ''}: ${formatEuro(l.sum)}`));
+      lines.forEach((l) => out.push(`• ${l.title}${l.sub ? ` (${l.sub})` : ''}: ${l.sum < 0 ? '−' : ''}${fmtCur(Math.abs(l.sum))}`));
+      totals.forEach((l) => out.push(`• ${l.title}: ${fmtCur(l.sum)}`));
       out.push('');
-      out.push(`Итого: ${formatEuro(r.batchTotalPrice)}`);
-      if (state.qty > 1) out.push(`В среднем ${formatEuro(r.unitFinalPrice)} за 1 шт.`);
+      out.push(`Итого: ${fmtCur(grand)}`);
+      if (state.qty > 1) out.push(`В среднем ${fmtCur(grand / state.qty)} за 1 шт.`);
       if (state.clientNote.trim()) { out.push(''); out.push(state.clientNote.trim()); }
       return out.join('\n');
     }
 
+    let toastTimer = null;
     function showToast(msg) {
-      const el = document.getElementById('clientToast');
+      const el = document.getElementById('appToast');
       el.textContent = msg;
-      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+      el.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
     }
 
     async function copyClientText() {
@@ -1327,16 +1925,22 @@
     }
 
     function bindExtraEvents() {
-      document.getElementById('ratesEditor').addEventListener('input', (e) => {
+      const rateEditor = document.getElementById('ratesEditor');
+      const onRateEdit = (e) => {
         const t = e.target;
         if (!t.dataset || !t.dataset.group) return;
         const v = parseFloat(String(t.value).replace(',', '.'));
         if (!Number.isFinite(v) || v < 0) return;
-        rates[t.dataset.group][t.dataset.kind] = v;
+        const r = rates[t.dataset.group];
+        r[t.dataset.kind] = v;
+        const out = document.getElementById(`rateCalc_${t.dataset.group}`);
+        if (out) out.textContent = rateCalcText(r);
         saveRates();
         renderFilamentGroupCards();
         updateCalculationsOnly();
-      });
+      };
+      rateEditor.addEventListener('input', onRateEdit);
+      rateEditor.addEventListener('change', onRateEdit);
 
       document.getElementById('resetRatesBtn').addEventListener('click', () => {
         defaultRates();
@@ -1351,9 +1955,9 @@
       });
       window.addEventListener('hashchange', () => showClientView(location.hash === '#client'));
 
-      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote']].forEach(([id, key]) => {
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote'], ['clientOfferInput', 'offerNo'], ['brandNameInput', 'brandName'], ['brandEmailInput', 'brandEmail'], ['brandPhoneInput', 'brandPhone'], ['validDaysInput', 'validDays']].forEach(([id, key]) => {
         document.getElementById(id).addEventListener('input', (e) => {
-          state[key] = e.target.value;
+          state[key] = key === 'validDays' ? Math.min(365, Math.max(0, parseInt(e.target.value, 10) || 0)) : e.target.value;
           renderClientView();
           saveState();
         });
@@ -1361,15 +1965,24 @@
 
       document.getElementById('copyBtn').addEventListener('click', copyClientText);
       document.getElementById('printBtn').addEventListener('click', () => window.print());
-      document.getElementById('shareBtn').addEventListener('click', async () => {
-        const text = buildClientText();
-        if (navigator.share) {
-          try {
-            await navigator.share({ title: state.clientTitle.trim() || 'Расчёт стоимости 3D-печати', text });
-          } catch (e) { /* пользователь закрыл окно */ }
-        } else {
-          copyClientText();
-        }
+      document.getElementById('shareBtn').addEventListener('click', shareClientImage);
+      document.getElementById('pdfBtn').addEventListener('click', downloadClientPdf);
+      document.getElementById('saveBtn2').addEventListener('click', saveToHistory);
+      document.getElementById('saveHistoryBtn').addEventListener('click', saveToHistory);
+
+      document.getElementById('historySearch').addEventListener('input', renderHistory);
+      document.getElementById('historyList').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        if (btn.dataset.act === 'open') openFromHistory(btn.dataset.id);
+        if (btn.dataset.act === 'delete') deleteFromHistory(btn.dataset.id);
+      });
+      document.getElementById('exportBtn').addEventListener('click', exportData);
+      document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+      document.getElementById('importFile').addEventListener('change', (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) importData(f);
+        e.target.value = '';
       });
     }
 
@@ -1377,8 +1990,10 @@
     loadRates();
     bindEvents();
     bindExtraEvents();
+    bindOptionEvents();
     renderRateEditor();
     render();
+    renderHistory();
     showClientView(location.hash === '#client');
 
     /* ---------- Офлайн-режим (PWA) ---------- */

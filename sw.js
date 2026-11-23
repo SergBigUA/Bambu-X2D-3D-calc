@@ -1,8 +1,23 @@
-const CACHE = 'calc3d-v2';
+const CACHE = 'calc3d-v4';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+// Внешние библиотеки: сохраняем сразу при установке, чтобы всё работало офлайн
+const EXTRA = [
+  'https://cdn.tailwindcss.com',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then(async (c) => {
+      await c.addAll(CORE);
+      await Promise.allSettled(
+        EXTRA.map((u) =>
+          fetch(new Request(u, { mode: 'no-cors' })).then((res) => c.put(u, res))
+        )
+      );
+    }).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -13,7 +28,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Кеш при первом обращении: Tailwind CDN, шрифты и т.д. сохраняются и дальше работают офлайн
+// Сначала кеш, в фоне обновление: приложение открывается мгновенно и работает без сети
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
