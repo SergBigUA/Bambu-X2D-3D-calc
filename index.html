@@ -515,6 +515,37 @@
         <button id="importBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Импорт из файла</button>
         <input id="importFile" type="file" accept=".json,application/json" class="hidden" />
       </div>
+
+      <div id="syncBlock" class="mt-6 pt-5 border-t border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Синхронизация между устройствами</h3>
+        <p class="text-xs text-slate-500 mt-0.5 mb-2">Данные шифруются вашим паролем прямо на устройстве и хранятся в секретном Gist вашего GitHub. Без пароля их прочитать нельзя.</p>
+        <p id="syncStatus" class="text-xs font-medium text-slate-700 mb-3"></p>
+
+        <div id="syncSetup" class="space-y-2 max-w-md">
+          <input id="syncToken" type="password" autocomplete="off" placeholder="Токен GitHub (ghp_…)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <input id="syncPw1" type="password" autocomplete="new-password" placeholder="Пароль синхронизации (от 10 символов)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <input id="syncPw2" type="password" autocomplete="new-password" placeholder="Повторите пароль" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+          <button id="syncEnableBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Включить синхронизацию</button>
+          <details class="rounded-lg border border-slate-200 bg-slate-50/60">
+            <summary class="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-slate-700">Как получить токен GitHub</summary>
+            <ol class="px-4 pb-3 pt-1 text-xs text-slate-600 list-decimal list-inside space-y-1">
+              <li>Откройте github.com → ваше фото → <b>Settings</b> → внизу слева <b>Developer settings</b>.</li>
+              <li><b>Personal access tokens</b> → <b>Tokens (classic)</b> → <b>Generate new token (classic)</b>.</li>
+              <li>Название: <b>calc3d</b>. Срок: <b>No expiration</b> (или 1 год).</li>
+              <li>Отметьте <b>только одну галочку: gist</b>. Остальные не нужны.</li>
+              <li>Нажмите <b>Generate token</b>, скопируйте токен (показывается один раз) и вставьте в поле выше.</li>
+              <li>На втором устройстве введите тот же токен и тот же пароль.</li>
+            </ol>
+            <p class="px-4 pb-3 text-[11px] text-slate-400">Токен типа Fine-grained не подходит: он не умеет работать с Gist. Нужен именно classic.</p>
+          </details>
+        </div>
+
+        <div id="syncPanel" class="hidden flex flex-wrap gap-2">
+          <button id="syncNowBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Синхронизировать сейчас</button>
+          <button id="syncUnlockBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Ввести пароль</button>
+          <button id="syncOffBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Отключить</button>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -593,11 +624,26 @@
       <button id="shareBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Отправить картинку</button>
       <button id="pdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Скачать PDF</button>
       <button id="sendPdfBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Отправить PDF</button>
+      <button id="copyImgBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Копировать картинку</button>
+      <button id="dlImgBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Скачать картинку</button>
       <button id="saveBtn2" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Сохранить в историю</button>
       <button id="copyBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Копировать текст</button>
       <button id="printBtn" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Печать</button>
     </div>
-    <p id="clientToast" class="no-print text-xs text-emerald-700 mt-2 h-4"></p>
+    <p id="clientToast" class="no-print text-xs text-emerald-700 mt-2 min-h-[1rem]"></p>
+  </div>
+
+  <div id="syncModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
+      <h3 class="text-base font-semibold text-slate-900 mb-1">Пароль синхронизации</h3>
+      <p class="text-xs text-slate-500 mb-3">Он спрашивается один раз при запуске приложения и нигде не сохраняется.</p>
+      <input id="syncPwInput" type="password" autocomplete="current-password" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
+      <p id="syncPwErr" class="text-xs text-rose-600 mt-2 min-h-[1rem]"></p>
+      <div class="flex gap-2 mt-3">
+        <button id="syncPwOk" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-900 hover:bg-slate-800 text-white">Войти</button>
+        <button id="syncPwLater" type="button" class="px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-white hover:bg-slate-100 text-slate-700 border border-slate-200">Позже</button>
+      </div>
+    </div>
   </div>
 
   <div id="appToast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm shadow-lg text-center"></div>
@@ -766,6 +812,7 @@
 
     function saveRates() {
       try { localStorage.setItem(RATES_KEY, JSON.stringify(rates)); } catch (e) { /* ignore */ }
+      try { scheduleSync(4000); } catch (e) { /* ignore */ }
     }
 
     function rateOf(group) {
@@ -832,6 +879,12 @@
       try {
         const { searchQuery, ...rest } = state;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+      } catch (e) { /* ignore */ }
+      try {
+        if (SYNC.cfg && SYNC.session) {
+          const h = settingsHash();
+          if (h !== SYNC.lastSeenHash) { SYNC.lastSeenHash = h; scheduleSync(5000); }
+        }
       } catch (e) { /* ignore */ }
     }
 
@@ -1530,6 +1583,7 @@
       syncInputsUI();
       renderClientView();
       renderHistory();
+      scheduleSync(2000);
     }
 
     function renderHistory() {
@@ -1569,7 +1623,11 @@
     function deleteFromHistory(id) {
       if (!window.confirm('Удалить этот заказ из истории?')) return;
       setHistory(getHistory().filter((e) => e.id !== id));
+      const del = getDeleted();
+      del[id] = Date.now();
+      setDeleted(del);
       renderHistory();
+      scheduleSync(2000);
     }
 
     /* ---------- Экспорт и импорт ---------- */
@@ -1612,7 +1670,7 @@
         saveRates();
         const cur = getHistory();
         const ids = new Set(cur.map((e) => e.id));
-        const incoming = (Array.isArray(p.history) ? p.history : []).filter((e) => e && typeof e.id === 'string' && Number.isFinite(e.ts) && e.snapshot && !ids.has(e.id));
+        const incoming = (Array.isArray(p.history) ? p.history : []).map(cleanEntry).filter((e) => e && !ids.has(e.id));
         setHistory(cur.concat(incoming).sort((a, b) => b.ts - a.ts));
         if (Number.isFinite(p.offerSeq) && p.offerSeq > getSeq()) setSeq(Math.round(p.offerSeq));
         renderRateEditor();
@@ -1638,35 +1696,121 @@
       return `smeta-${effectiveOfferNo().replace(/КП/g, 'KP').replace(/[^\w.-]+/g, '_')}.${ext}`;
     }
 
-    async function shareFile(file, fallbackBlob, fallbackName) {
-      // Только файл, без текста и заголовка: так мессенджеры (Telegram, WhatsApp, Viber) принимают его надёжнее
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file] });
-          return;
-        } catch (e) {
-          if (e && e.name === 'AbortError') return; // пользователь закрыл окно
-        }
-      }
-      downloadBlob(fallbackBlob, fallbackName);
-      showToast('Не удалось открыть меню отправки: файл скачан, отправьте его из «Загрузок»');
+    /* Смета готовится заранее (картинка + PDF), чтобы кнопка «Отправить» сработала мгновенно:
+       Android разрешает открыть меню отправки только сразу после нажатия. */
+    let quoteCache = { key: '', png: null, jpg: null, pdf: null };
+    let quoteBusy = false;
+    let quoteAgain = false;
+    let prepTimer = null;
+
+    function quoteKey() {
+      return `${buildClientText()}|${state.currency}`;
     }
 
-    async function shareClientImage() {
+    function setQuoteStatus(msg) {
+      const el = document.getElementById('clientToast');
+      if (el) el.textContent = msg;
+    }
+
+    function scheduleQuotePrep() {
+      const view = document.getElementById('clientView');
+      if (!view || view.classList.contains('hidden')) return;
+      if (quoteCache.key === quoteKey() && quoteCache.png) return;
+      setQuoteStatus('Готовлю смету к отправке…');
+      clearTimeout(prepTimer);
+      prepTimer = setTimeout(prepareQuote, 600);
+    }
+
+    function canvasToBlob(canvas, type, q) {
+      return new Promise((res) => canvas.toBlob(res, type, q));
+    }
+
+    async function prepareQuote() {
+      if (typeof window.html2canvas !== 'function') {
+        setQuoteStatus('Для картинки и PDF откройте приложение с интернетом один раз.');
+        return false;
+      }
+      if (quoteBusy) { quoteAgain = true; return false; }
+      const key = quoteKey();
+      if (quoteCache.key === key && quoteCache.png) { setQuoteStatus('Смета готова к отправке'); return true; }
+      quoteBusy = true;
       try {
-        const canvas = await renderQuoteCanvas();
-        if (!canvas) return;
-        const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
-        if (!blob) throw new Error('blob');
-        const name = quoteFileName('jpg');
-        await shareFile(new File([blob], name, { type: 'image/jpeg' }), blob, name);
+        const canvas = await window.html2canvas(document.getElementById('clientCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+        const png = await canvasToBlob(canvas, 'image/png');
+        const jpg = await canvasToBlob(canvas, 'image/jpeg', 0.92);
+        let pdfBlob = null;
+        try {
+          const pdf = await buildQuotePdf(canvas);
+          if (pdf) pdfBlob = pdf.output('blob');
+        } catch (e) { /* PDF необязателен для картинки */ }
+        quoteCache = { key, png, jpg, pdf: pdfBlob };
+        setQuoteStatus('Смета готова к отправке');
       } catch (e) {
-        showToast('Не удалось подготовить картинку');
+        setQuoteStatus('Не удалось подготовить смету');
+      }
+      quoteBusy = false;
+      if (quoteAgain) { quoteAgain = false; scheduleQuotePrep(); }
+      return !!quoteCache.png;
+    }
+
+    function readyQuote() {
+      return quoteCache.png && quoteCache.key === quoteKey() ? quoteCache : null;
+    }
+
+    function notReadyYet() {
+      showToast('Готовлю смету. Через пару секунд нажмите кнопку ещё раз');
+      prepareQuote().then((ok) => { if (ok) showToast('Смета готова, нажмите кнопку ещё раз'); });
+    }
+
+    function shareBlobNow(blob, type, ext) {
+      const name = quoteFileName(ext);
+      const file = new File([blob], name, { type });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file] }).catch((e) => {
+          if (e && e.name === 'AbortError') return;
+          downloadBlob(blob, name);
+          showToast('Меню отправки не открылось: файл скачан, отправьте его из «Загрузок»');
+        });
+      } else {
+        downloadBlob(blob, name);
+        showToast('Отправка из приложения не поддерживается: файл скачан');
       }
     }
 
-    async function buildQuotePdf() {
-      const canvas = await renderQuoteCanvas();
+    function shareClientImage() {
+      const c = readyQuote();
+      if (!c) { notReadyYet(); return; }
+      shareBlobNow(c.jpg, 'image/jpeg', 'jpg');
+    }
+
+    function shareClientPdf() {
+      const c = readyQuote();
+      if (!c) { notReadyYet(); return; }
+      if (!c.pdf) { showToast('PDF не удалось подготовить'); return; }
+      shareBlobNow(c.pdf, 'application/pdf', 'pdf');
+    }
+
+    function downloadClientImage() {
+      const c = readyQuote();
+      if (!c) { notReadyYet(); return; }
+      downloadBlob(c.jpg, quoteFileName('jpg'));
+      showToast('Картинка сметы скачана');
+    }
+
+    function copyClientImage() {
+      const c = readyQuote();
+      if (!c) { notReadyYet(); return; }
+      if (!navigator.clipboard || typeof window.ClipboardItem !== 'function') {
+        showToast('Копирование картинки не поддерживается. Используйте «Отправить» или «Скачать»');
+        return;
+      }
+      navigator.clipboard.write([new window.ClipboardItem({ 'image/png': c.png })])
+        .then(() => showToast('Картинка скопирована. Вставьте её в чат'))
+        .catch(() => showToast('Не удалось скопировать. Используйте «Отправить» или «Скачать»'));
+    }
+
+    async function buildQuotePdf(canvasArg) {
+      const canvas = canvasArg || await renderQuoteCanvas();
       if (!canvas) return null;
       if (!window.jspdf || !window.jspdf.jsPDF) {
         showToast('Библиотека PDF не загружена. Откройте приложение с интернетом один раз.');
@@ -1683,6 +1827,8 @@
 
     async function downloadClientPdf() {
       try {
+        const c = readyQuote();
+        if (c && c.pdf) { downloadBlob(c.pdf, quoteFileName('pdf')); showToast('PDF сохранён'); return; }
         const pdf = await buildQuotePdf();
         if (!pdf) return;
         pdf.save(quoteFileName('pdf'));
@@ -1692,16 +1838,361 @@
       }
     }
 
-    async function shareClientPdf() {
+    /* ---------- Синхронизация: секретный Gist + шифрование паролем ---------- */
+    const SYNC_KEY = 'calc3d_sync_v1';
+    const DEL_KEY = 'calc3d_deleted_v1';
+    const GIST_DESC = 'calc3d-sync-data';
+    const GIST_FILE = 'calc3d-sync.json';
+    const KDF_ITER = 250000;
+    const SYNC_SETTINGS_KEYS = ['postPrices', 'modelPrices', 'powerW', 'tariff', 'wearRate', 'defectPct', 'minPrice', 'vatPct', 'currency', 'fx', 'brandName', 'brandEmail', 'brandPhone', 'validDays'];
+    const SYNC = { cfg: null, session: null, busy: false, timer: null, lastSeenHash: null, lastRun: 0 };
+    const te = new TextEncoder();
+    const td = new TextDecoder();
+
+    class SyncError extends Error { constructor(code) { super(code); this.code = code; } }
+
+    function cleanEntry(e) {
+      if (!e || typeof e !== 'object') return null;
+      if (typeof e.id !== 'string' || !/^[a-z0-9]{4,40}$/i.test(e.id)) return null;
+      if (!Number.isFinite(e.ts) || !e.snapshot || typeof e.snapshot !== 'object' || !e.snapshot.state) return null;
+      return {
+        id: e.id, ts: Math.round(e.ts),
+        title: String(e.title || '').slice(0, 160),
+        customer: String(e.customer || '').slice(0, 120),
+        offerNo: String(e.offerNo || '').slice(0, 40),
+        qty: Number.isFinite(e.qty) ? Math.round(e.qty) : 1,
+        totalText: String(e.totalText || '').slice(0, 40),
+        snapshot: { state: e.snapshot.state, rates: e.snapshot.rates || null },
+      };
+    }
+
+    function getDeleted() {
       try {
-        const pdf = await buildQuotePdf();
-        if (!pdf) return;
-        const blob = pdf.output('blob');
-        const name = quoteFileName('pdf');
-        await shareFile(new File([blob], name, { type: 'application/pdf' }), blob, name);
-      } catch (e) {
-        showToast('Не удалось подготовить PDF');
+        const d = JSON.parse(localStorage.getItem(DEL_KEY) || '{}');
+        return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
+      } catch (e) { return {}; }
+    }
+    function setDeleted(d) {
+      const keys = Object.keys(d).sort((a, b) => d[b] - d[a]).slice(0, 1000).sort();
+      const o = {};
+      keys.forEach((k) => { o[k] = d[k]; });
+      try { localStorage.setItem(DEL_KEY, JSON.stringify(o)); } catch (e) { /* ignore */ }
+    }
+
+    function getSyncSettings() {
+      const st = {};
+      SYNC_SETTINGS_KEYS.forEach((k) => { st[k] = JSON.parse(JSON.stringify(state[k])); });
+      return { state: st, rates: JSON.parse(JSON.stringify(rates)) };
+    }
+    function hashStr(str) {
+      let h = 5381;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+      return `${h >>> 0}:${str.length}`;
+    }
+    function settingsHash() { return hashStr(JSON.stringify(getSyncSettings())); }
+
+    function buildPayload(history, deleted, settings, offerSeq) {
+      const hist = history.slice().sort((a, b) => b.ts - a.ts || (a.id < b.id ? -1 : 1));
+      const del = {};
+      Object.keys(deleted).sort().forEach((k) => { del[k] = deleted[k]; });
+      return { v: 1, history: hist, deleted: del, settings, settingsHash: hashStr(JSON.stringify(settings)), offerSeq };
+    }
+
+    /* --- шифрование: PBKDF2 (SHA-256) + AES-256-GCM, сжатие gzip --- */
+    function toB64(buf) {
+      const bytes = new Uint8Array(buf);
+      let str = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) str += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(str);
+    }
+    function fromB64(b) {
+      const bin = atob(b);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    async function deriveKey(password, salt, iter) {
+      const base = await crypto.subtle.importKey('raw', te.encode(password), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    }
+    async function encryptBytes(password, bytes) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(password, salt, KDF_ITER);
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes);
+      return { v: 1, kdf: 'PBKDF2-SHA256', iter: KDF_ITER, salt: toB64(salt), iv: toB64(iv), data: toB64(ct) };
+    }
+    async function decryptBytes(password, box) {
+      if (!box || box.v !== 1 || typeof box.iter !== 'number' || box.iter < 1000 || box.iter > 2000000) throw new Error('format');
+      const key = await deriveKey(password, fromB64(box.salt), box.iter);
+      return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(box.iv) }, key, fromB64(box.data)));
+    }
+    async function gzipBytes(bytes) {
+      if (typeof CompressionStream === 'undefined') return null;
+      const cs = new CompressionStream('gzip');
+      const w = cs.writable.getWriter();
+      w.write(bytes); w.close();
+      return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+    }
+    async function gunzipBytes(bytes) {
+      const ds = new DecompressionStream('gzip');
+      const w = ds.writable.getWriter();
+      w.write(bytes); w.close();
+      return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+    }
+    async function sealPayload(payload) {
+      const raw = te.encode(JSON.stringify(payload));
+      const gz = await gzipBytes(raw);
+      const box = await encryptBytes(SYNC.session.password, gz || raw);
+      box.gz = !!gz;
+      return JSON.stringify(box);
+    }
+    async function openPayload(content) {
+      let box;
+      try { box = JSON.parse(content); } catch (e) { throw new SyncError('format'); }
+      let bytes;
+      try { bytes = await decryptBytes(SYNC.session.password, box); }
+      catch (e) { throw new SyncError(e && e.message === 'format' ? 'format' : 'password'); }
+      if (box.gz) bytes = await gunzipBytes(bytes);
+      try { return JSON.parse(td.decode(bytes)); } catch (e) { throw new SyncError('format'); }
+    }
+
+    /* --- GitHub Gist API --- */
+    async function gh(path, opts = {}) {
+      const headers = { Accept: 'application/vnd.github+json', Authorization: `Bearer ${SYNC.session.token}` };
+      if (opts.body) headers['Content-Type'] = 'application/json';
+      let res;
+      try { res = await fetch(`https://api.github.com${path}`, { ...opts, headers, cache: 'no-store' }); }
+      catch (e) { throw new SyncError('network'); }
+      if (res.status === 401) throw new SyncError('token');
+      if (res.status === 403) throw new SyncError('forbidden');
+      if (res.status === 404) throw new SyncError('notfound');
+      if (!res.ok) throw new SyncError(`http${res.status}`);
+      return res.json();
+    }
+    async function findGist() {
+      for (let page = 1; page <= 5; page++) {
+        const list = await gh(`/gists?per_page=100&page=${page}`);
+        const g = list.find((x) => x.description === GIST_DESC && x.files && x.files[GIST_FILE]);
+        if (g) return g;
+        if (list.length < 100) break;
       }
+      return null;
+    }
+    async function pullRemote() {
+      if (!/^[a-f0-9]+$/i.test(SYNC.cfg.gistId || '')) throw new SyncError('notfound');
+      const g = await gh(`/gists/${SYNC.cfg.gistId}`);
+      const f = g.files && g.files[GIST_FILE];
+      if (!f) return null;
+      let content = f.content;
+      if (f.truncated && f.raw_url) {
+        const r = await fetch(f.raw_url, { cache: 'no-store' });
+        if (!r.ok) throw new SyncError(`http${r.status}`);
+        content = await r.text();
+      }
+      return openPayload(content);
+    }
+
+    function syncErrorText(e) {
+      const m = {
+        password: 'Неверный пароль синхронизации', token: 'Токен недействителен или отозван',
+        forbidden: 'GitHub отказал в доступе. Проверьте, что у токена есть право gist',
+        notfound: 'Данные в облаке не найдены', network: 'Нет подключения к интернету',
+        format: 'Данные в облаке повреждены или другого формата',
+      };
+      return m[e && e.code] || 'Ошибка синхронизации';
+    }
+
+    function loadSyncCfg() {
+      try {
+        const c = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null');
+        if (c && c.gistId && c.tokenEnc) SYNC.cfg = c;
+      } catch (e) { SYNC.cfg = null; }
+    }
+    function saveSyncCfg() {
+      try { localStorage.setItem(SYNC_KEY, JSON.stringify(SYNC.cfg)); } catch (e) { /* ignore */ }
+    }
+
+    function setSyncStatus(msg) { const el = document.getElementById('syncStatus'); if (el) el.textContent = msg; }
+
+    function renderSyncUI() {
+      const cfg = SYNC.cfg;
+      document.getElementById('syncSetup').classList.toggle('hidden', !!cfg);
+      document.getElementById('syncPanel').classList.toggle('hidden', !cfg);
+      document.getElementById('syncUnlockBtn').classList.toggle('hidden', !cfg || !!SYNC.session);
+      document.getElementById('syncNowBtn').classList.toggle('hidden', !cfg || !SYNC.session);
+      if (!cfg) { setSyncStatus('Не настроена'); return; }
+      if (!SYNC.session) { setSyncStatus(`Подключено (${cfg.user || 'GitHub'}). Введите пароль, чтобы синхронизировать.`); return; }
+      const when = cfg.lastSync ? new Date(cfg.lastSync).toLocaleString('ru-RU') : 'ещё не было';
+      setSyncStatus(`Подключено (${cfg.user || 'GitHub'}). Последняя синхронизация: ${when}`);
+    }
+
+    function applyRemoteSettings(st) {
+      if (!st || typeof st !== 'object') return;
+      if (st.state) applyState(st.state);
+      if (st.rates) applyRatesObj(st.rates);
+      saveRates();
+      saveState();
+      renderRateEditor();
+      render();
+    }
+
+    async function syncNow(silent) {
+      if (!SYNC.cfg) return;
+      if (!SYNC.session) { if (!silent) openSyncModal(); return; }
+      if (SYNC.busy) return;
+      SYNC.busy = true;
+      setSyncStatus('Синхронизация…');
+      try {
+        const remote = await pullRemote();
+        const localHist = getHistory().map(cleanEntry).filter(Boolean);
+        const rHist = remote && Array.isArray(remote.history) ? remote.history.map(cleanEntry).filter(Boolean) : [];
+        const localDel = getDeleted();
+        const del = {};
+        const addDel = (d) => Object.keys(d || {}).forEach((k) => {
+          if (/^[a-z0-9]{4,40}$/i.test(k) && Number.isFinite(d[k]) && (!(k in del) || d[k] > del[k])) del[k] = d[k];
+        });
+        addDel(remote && remote.deleted); addDel(localDel);
+
+        const byId = new Map();
+        rHist.concat(localHist).forEach((e) => {
+          if (del[e.id]) return;
+          const cur = byId.get(e.id);
+          if (!cur || e.ts > cur.ts) byId.set(e.id, e);
+        });
+        const merged = Array.from(byId.values()).sort((a, b) => b.ts - a.ts).slice(0, 300);
+
+        // Настройки: если на этом устройстве их не меняли с прошлой синхронизации, берём облачные
+        const localHash = settingsHash();
+        if (remote && remote.settings && remote.settingsHash && SYNC.cfg.lastHash === localHash && remote.settingsHash !== localHash) {
+          applyRemoteSettings(remote.settings);
+        }
+        const settings = getSyncSettings();
+        const seq = Math.max(getSeq(), remote && Number.isFinite(remote.offerSeq) ? Math.round(remote.offerSeq) : 1);
+
+        setHistory(merged); setDeleted(del); setSeq(seq);
+
+        const payload = buildPayload(merged, del, settings, seq);
+        const changed = !remote || JSON.stringify(buildPayload(rHist, remote.deleted || {}, remote.settings || {}, remote.offerSeq || 1)) !== JSON.stringify(payload);
+        if (changed) {
+          payload.updatedAt = Date.now();
+          await gh(`/gists/${SYNC.cfg.gistId}`, { method: 'PATCH', body: JSON.stringify({ files: { [GIST_FILE]: { content: await sealPayload(payload) } } }) });
+        }
+        SYNC.cfg.lastHash = settingsHash();
+        SYNC.cfg.lastSync = Date.now();
+        saveSyncCfg();
+        SYNC.lastSeenHash = SYNC.cfg.lastHash;
+        renderHistory();
+        renderSyncUI();
+        if (!silent) showToast(`Синхронизировано. Заказов: ${merged.length}`);
+      } catch (e) {
+        if (e && e.code === 'password') { SYNC.session = null; openSyncModal(); }
+        renderSyncUI();
+        setSyncStatus(`${syncErrorText(e)}`);
+        if (!silent) showToast(syncErrorText(e));
+      }
+      SYNC.busy = false;
+      SYNC.lastRun = Date.now();
+    }
+
+    function scheduleSync(delay) {
+      if (!SYNC.cfg || !SYNC.session) return;
+      clearTimeout(SYNC.timer);
+      SYNC.timer = setTimeout(() => syncNow(true), delay || 2500);
+    }
+
+    async function enableSync() {
+      const token = document.getElementById('syncToken').value.trim();
+      const p1 = document.getElementById('syncPw1').value;
+      const p2 = document.getElementById('syncPw2').value;
+      if (!(window.crypto && crypto.subtle)) { showToast('Шифрование недоступно в этом браузере'); return; }
+      if (token.length < 20) { showToast('Вставьте токен GitHub целиком'); return; }
+      if (p1.length < 10) { showToast('Пароль слишком короткий: нужно от 10 символов'); return; }
+      if (p1 !== p2) { showToast('Пароли не совпадают'); return; }
+      if (SYNC.busy) return;
+      SYNC.busy = true;
+      setSyncStatus('Подключаюсь…');
+      try {
+        SYNC.session = { password: p1, token };
+        const user = await gh('/user');
+        const found = await findGist();
+        const cfg = { gistId: null, tokenEnc: await encryptBytes(p1, te.encode(token)), lastHash: null, lastSync: 0, user: user.login };
+        if (found) {
+          if (!window.confirm('На GitHub найдены данные синхронизации. Загрузить их на это устройство? История объединится, цены и настройки возьмутся из облака.')) {
+            SYNC.session = null; SYNC.busy = false; renderSyncUI(); return;
+          }
+          cfg.gistId = found.id;
+          SYNC.cfg = cfg;
+          await pullRemote(); // проверка пароля
+          cfg.lastHash = settingsHash();
+          saveSyncCfg();
+        } else {
+          const payload = buildPayload(getHistory().map(cleanEntry).filter(Boolean), getDeleted(), getSyncSettings(), getSeq());
+          payload.updatedAt = Date.now();
+          const created = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: GIST_DESC, public: false, files: { [GIST_FILE]: { content: await sealPayload(payload) } } }) });
+          cfg.gistId = created.id;
+          cfg.lastHash = settingsHash();
+          cfg.lastSync = Date.now();
+          SYNC.cfg = cfg;
+          saveSyncCfg();
+        }
+        ['syncToken', 'syncPw1', 'syncPw2'].forEach((id) => { document.getElementById(id).value = ''; });
+        SYNC.busy = false;
+        renderSyncUI();
+        await syncNow(true);
+        showToast('Синхронизация включена');
+      } catch (e) {
+        SYNC.cfg = null; SYNC.session = null; SYNC.busy = false;
+        renderSyncUI();
+        showToast(syncErrorText(e));
+      }
+      SYNC.busy = false;
+    }
+
+    function openSyncModal() {
+      if (!SYNC.cfg) return;
+      document.getElementById('syncPwErr').textContent = '';
+      document.getElementById('syncPwInput').value = '';
+      document.getElementById('syncModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('syncPwInput').focus(), 50);
+    }
+    function closeSyncModal() { document.getElementById('syncModal').classList.add('hidden'); }
+
+    async function submitSyncPassword() {
+      const pw = document.getElementById('syncPwInput').value;
+      if (!pw || !SYNC.cfg) return;
+      document.getElementById('syncPwErr').textContent = 'Проверяю…';
+      try {
+        const token = td.decode(await decryptBytes(pw, SYNC.cfg.tokenEnc));
+        SYNC.session = { password: pw, token };
+        SYNC.lastSeenHash = settingsHash();
+        closeSyncModal();
+        renderSyncUI();
+        syncNow(true);
+      } catch (e) {
+        document.getElementById('syncPwErr').textContent = 'Неверный пароль';
+      }
+    }
+
+    function disableSync() {
+      if (!window.confirm('Отключить синхронизацию на этом устройстве? Данные в облаке останутся (их можно удалить на gist.github.com).')) return;
+      try { localStorage.removeItem(SYNC_KEY); } catch (e) { /* ignore */ }
+      SYNC.cfg = null; SYNC.session = null;
+      renderSyncUI();
+      showToast('Синхронизация отключена');
+    }
+
+    function bindSyncEvents() {
+      document.getElementById('syncEnableBtn').addEventListener('click', enableSync);
+      document.getElementById('syncNowBtn').addEventListener('click', () => syncNow(false));
+      document.getElementById('syncUnlockBtn').addEventListener('click', openSyncModal);
+      document.getElementById('syncOffBtn').addEventListener('click', disableSync);
+      document.getElementById('syncPwOk').addEventListener('click', submitSyncPassword);
+      document.getElementById('syncPwLater').addEventListener('click', closeSyncModal);
+      document.getElementById('syncPwInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitSyncPassword(); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && SYNC.cfg && SYNC.session && Date.now() - SYNC.lastRun > 60000) syncNow(true);
+      });
     }
 
     /* ---------- Услуги: постобработка и моделирование ---------- */
@@ -1899,6 +2390,7 @@
       } else {
         noteEl.classList.add('hidden');
       }
+      scheduleQuotePrep();
     }
 
     function buildClientText() {
@@ -1995,6 +2487,8 @@
       document.getElementById('shareBtn').addEventListener('click', shareClientImage);
       document.getElementById('pdfBtn').addEventListener('click', downloadClientPdf);
       document.getElementById('sendPdfBtn').addEventListener('click', shareClientPdf);
+      document.getElementById('copyImgBtn').addEventListener('click', copyClientImage);
+      document.getElementById('dlImgBtn').addEventListener('click', downloadClientImage);
       document.getElementById('saveBtn2').addEventListener('click', saveToHistory);
       document.getElementById('saveHistoryBtn').addEventListener('click', saveToHistory);
 
@@ -2022,6 +2516,10 @@
     renderRateEditor();
     render();
     renderHistory();
+    loadSyncCfg();
+    bindSyncEvents();
+    renderSyncUI();
+    if (SYNC.cfg) setTimeout(openSyncModal, 700);
     showClientView(location.hash === '#client');
 
     /* ---------- Офлайн-режим (PWA) ---------- */

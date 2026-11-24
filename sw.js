@@ -1,4 +1,4 @@
-const CACHE = 'calc3d-v4';
+const CACHE = 'calc3d-v5';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 // Внешние библиотеки: сохраняем сразу при установке, чтобы всё работало офлайн
 const EXTRA = [
@@ -29,8 +29,13 @@ self.addEventListener('activate', (e) => {
 });
 
 // Сначала кеш, в фоне обновление: приложение открывается мгновенно и работает без сети
+// Запросы к GitHub (синхронизация) и любые чужие адреса не кешируем и не трогаем
+const CACHEABLE_HOSTS = ['cdn.tailwindcss.com', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin && !CACHEABLE_HOSTS.includes(url.hostname)) return;
   e.respondWith(
     caches.match(e.request).then((cached) => {
       const network = fetch(e.request)
