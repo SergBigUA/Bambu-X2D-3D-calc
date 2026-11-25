@@ -612,6 +612,19 @@
       </details>
     </div>
 
+    <div class="no-print mb-3">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs font-medium text-slate-600">Язык сметы:</span>
+        <div id="langSwitch" class="flex gap-1.5 flex-wrap">
+          <button type="button" data-lang="ru">Русский</button>
+          <button type="button" data-lang="uk">Українська</button>
+          <button type="button" data-lang="en">English</button>
+          <button type="button" data-lang="lt">Lietuvių</button>
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-1">Переводятся подписи, названия групп и услуг, даты и формат сумм. Название заказа, имя заказчика и примечание введите на нужном языке сами.</p>
+    </div>
+
     <article id="clientCard" class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-soft">
       <div class="pb-4 border-b border-slate-200">
         <div class="flex items-start justify-between gap-3">
@@ -630,7 +643,7 @@
           </div>
         </div>
         <div class="mt-4">
-          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Расчёт стоимости 3D-печати</div>
+          <div id="clientDocLabel" class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Расчёт стоимости 3D-печати</div>
           <h1 id="clientHeading" class="text-xl font-bold tracking-tight text-slate-900 mt-1">3D-печать на заказ</h1>
           <p id="clientCustomer" class="hidden text-sm text-slate-600 mt-1"></p>
         </div>
@@ -638,7 +651,7 @@
       <div id="clientImageWrap" class="hidden pt-4 pb-1"><img id="clientImage" alt="Фото изделия" class="mx-auto max-h-60 w-auto max-w-full rounded-xl object-contain" /></div>
       <div id="clientLines" class="divide-y divide-slate-100 text-sm"></div>
       <div class="mt-4 pt-4 border-t-2 border-slate-900 flex items-baseline justify-between gap-3">
-        <span class="text-base font-semibold text-slate-900">Итого</span>
+        <span id="clientTotalLabel" class="text-base font-semibold text-slate-900">Итого</span>
         <span id="clientTotal" class="text-3xl font-bold tracking-tight text-slate-900">0,00 €</span>
       </div>
       <p id="clientUnitNote" class="text-xs text-slate-500 mt-1 text-right"></p>
@@ -797,6 +810,7 @@
       optPromo: false,
       promoPct: 10,
       promoName: '',
+      quoteLang: 'ru',
     };
 
     const state = { ...DEFAULTS, postPrices: [...DEFAULTS.postPrices], modelPrices: [...DEFAULTS.modelPrices], fx: { ...DEFAULTS.fx } };
@@ -899,6 +913,7 @@
         if (typeof s.brandPhone === 'string') state.brandPhone = s.brandPhone.slice(0, 40);
         if (typeof s.offerNo === 'string') state.offerNo = s.offerNo.slice(0, 30);
         if (typeof s.promoName === 'string') state.promoName = s.promoName.slice(0, 40);
+        if (QUOTE_LANGS[s.quoteLang]) state.quoteLang = s.quoteLang;
         if (typeof s.editingId === 'string' && /^[a-z0-9]{4,40}$/i.test(s.editingId)) state.editingId = s.editingId;
         else if (s.editingId === '') state.editingId = '';
         if (Number.isFinite(s.validDays)) state.validDays = Math.min(365, Math.max(0, Math.round(s.validDays)));
@@ -1922,7 +1937,7 @@
     let prepTimer = null;
 
     function quoteKey() {
-      return `${buildClientText()}|${state.currency}|${currentImage ? currentImage.length + currentImage.slice(-16) : ''}`;
+      return `${buildClientText()}|${state.currency}|${state.quoteLang}|${currentImage ? currentImage.length + currentImage.slice(-16) : ''}`;
     }
 
     function setQuoteStatus(msg) {
@@ -2530,64 +2545,156 @@
     }
 
     /* ---------- Экран для заказчика ---------- */
+    /* ---------- Языки сметы ---------- */
+    const QUOTE_LANGS = {
+      ru: {
+        locale: 'ru-RU', dec: ',', no: '№', from: 'от', g: 'г', h: 'ч', min: 'мин',
+        quoteTitle: 'Расчёт стоимости 3D-печати', defaultHeading: '3D-печать на заказ', customer: 'Заказчик', date: 'Дата',
+        validUntil: 'Действительно до', validDays: 'Цена действительна {n} дн.', total: 'Итого', avg: 'В среднем {v} за 1 шт.',
+        pcs: 'шт.', perPart: 'на деталь', clientFilament: 'пластик заказчика', printing: '3D-печать', ams: 'Многоцветная печать (AMS)',
+        post: 'Постобработка', batchDiscount: 'Скидка за партию', modeling: '3D-моделирование', oneTime: 'разово',
+        minTop: 'Доплата до минимальной цены заказа', subtotal: 'Сумма без НДС', vat: 'НДС', promo: 'Акция',
+        groups: { group_1: 'Базовые PLA и PETG', group_2: 'Декоративные и полупрозрачные PLA / PETG', group_3: 'Инженерные без волокна: ABS и ASA', group_4: 'Композиты с угле- и стекловолокном: CF / GF', group_5: 'Гибкие эластомеры TPU', group_6: 'Высокотемпературные и силовые: PA / PC / PET-CF' },
+        postNames: ['', 'Базовая зачистка', 'Грунт + покраска в 1 цвет', 'Ручная роспись + лак'],
+        modelNames: ['', 'Простейшие геометрические детали', 'Базовая ставка (типовая деталь)', 'Сложные детали'],
+      },
+      uk: {
+        locale: 'uk-UA', dec: ',', no: '№', from: 'від', g: 'г', h: 'год', min: 'хв',
+        quoteTitle: 'Розрахунок вартості 3D-друку', defaultHeading: '3D-друк на замовлення', customer: 'Замовник', date: 'Дата',
+        validUntil: 'Дійсна до', validDays: 'Ціна дійсна {n} дн.', total: 'Разом', avg: 'У середньому {v} за 1 шт.',
+        pcs: 'шт.', perPart: 'на деталь', clientFilament: 'пластик замовника', printing: '3D-друк', ams: 'Багатокольоровий друк (AMS)',
+        post: 'Постобробка', batchDiscount: 'Знижка за партію', modeling: '3D-моделювання', oneTime: 'одноразово',
+        minTop: 'Доплата до мінімальної вартості замовлення', subtotal: 'Сума без ПДВ', vat: 'ПДВ', promo: 'Акція',
+        groups: { group_1: 'Базові PLA та PETG', group_2: 'Декоративні та напівпрозорі PLA / PETG', group_3: 'Інженерні без волокна: ABS та ASA', group_4: 'Композити з вуглецевим і скловолокном: CF / GF', group_5: 'Гнучкі еластомери TPU', group_6: 'Високотемпературні та силові: PA / PC / PET-CF' },
+        postNames: ['', 'Базове зачищення', 'Ґрунтування + фарбування в 1 колір', 'Ручний розпис + лак'],
+        modelNames: ['', 'Найпростіші геометричні деталі', 'Базова ставка (типова деталь)', 'Складні деталі'],
+      },
+      en: {
+        locale: 'en-GB', dec: '.', no: 'No.', from: 'dated', g: 'g', h: 'h', min: 'min',
+        quoteTitle: '3D printing price quote', defaultHeading: 'Custom 3D printing', customer: 'Customer', date: 'Date',
+        validUntil: 'Valid until', validDays: 'Price valid for {n} days', total: 'Total', avg: 'Average {v} per piece',
+        pcs: 'pcs', perPart: 'per part', clientFilament: 'customer-supplied filament', printing: '3D printing', ams: 'Multicolour printing (AMS)',
+        post: 'Post-processing', batchDiscount: 'Volume discount', modeling: '3D modelling', oneTime: 'one-time',
+        minTop: 'Top-up to minimum order price', subtotal: 'Subtotal excl. VAT', vat: 'VAT', promo: 'Promotion',
+        groups: { group_1: 'Basic PLA and PETG', group_2: 'Decorative and translucent PLA / PETG', group_3: 'Engineering (unfilled): ABS and ASA', group_4: 'Carbon- and glass-fibre composites: CF / GF', group_5: 'Flexible TPU elastomers', group_6: 'High-temperature and structural: PA / PC / PET-CF' },
+        postNames: ['', 'Basic cleaning', 'Primer + single-colour paint', 'Hand painting + varnish'],
+        modelNames: ['', 'Simple geometric parts', 'Standard rate (typical part)', 'Complex parts'],
+      },
+      lt: {
+        locale: 'lt-LT', dec: ',', no: 'Nr.', from: 'nuo', g: 'g', h: 'val.', min: 'min.',
+        quoteTitle: '3D spausdinimo kainos skaičiavimas', defaultHeading: '3D spausdinimas pagal užsakymą', customer: 'Užsakovas', date: 'Data',
+        validUntil: 'Galioja iki', validDays: 'Kaina galioja {n} d.', total: 'Iš viso', avg: 'Vidutiniškai {v} už 1 vnt.',
+        pcs: 'vnt.', perPart: 'vienai detalei', clientFilament: 'užsakovo plastikas', printing: '3D spausdinimas', ams: 'Daugiaspalvis spausdinimas (AMS)',
+        post: 'Papildomas apdorojimas', batchDiscount: 'Nuolaida už partiją', modeling: '3D modeliavimas', oneTime: 'vienkartinis',
+        minTop: 'Priemoka iki minimalios užsakymo kainos', subtotal: 'Suma be PVM', vat: 'PVM', promo: 'Akcija',
+        groups: { group_1: 'Baziniai PLA ir PETG', group_2: 'Dekoratyviniai ir permatomi PLA / PETG', group_3: 'Inžineriniai be pluošto: ABS ir ASA', group_4: 'Kompozitai su anglies ir stiklo pluoštu: CF / GF', group_5: 'Lankstūs TPU elastomerai', group_6: 'Aukštatemperatūriniai ir konstrukciniai: PA / PC / PET-CF' },
+        postNames: ['', 'Pagrindinis nuvalymas', 'Gruntavimas + dažymas viena spalva', 'Rankinis tapymas + lakas'],
+        modelNames: ['', 'Paprastos geometrinės detalės', 'Bazinis tarifas (tipinė detalė)', 'Sudėtingos detalės'],
+      },
+    };
+
+    function Lq() { return QUOTE_LANGS[state.quoteLang] || QUOTE_LANGS.ru; }
+    function tr(key, vars) {
+      let t = Lq()[key];
+      if (t === undefined) t = QUOTE_LANGS.ru[key];
+      if (vars) Object.keys(vars).forEach((k) => { t = t.replace(`{${k}}`, vars[k]); });
+      return t;
+    }
+    function numL(v, d) {
+      const n = (Number.isFinite(v) ? v : 0).toFixed(d);
+      return Lq().dec === ',' ? n.replace('.', ',') : n;
+    }
+    function dateL(dt) { return dt.toLocaleDateString(Lq().locale); }
+    function offerNoL(no) { return state.quoteLang === 'en' || state.quoteLang === 'lt' ? no.replace(/КП/g, 'KP') : no; }
+    function hoursL(hours) {
+      const t = Math.round((Number.isFinite(hours) ? hours : 0) * 60);
+      const h = Math.floor(t / 60);
+      const m = t % 60;
+      const u = Lq();
+      if (h === 0) return `${m} ${u.min}`;
+      return m === 0 ? `${h} ${u.h}` : `${h} ${u.h} ${m} ${u.min}`;
+    }
+
     function fmtCur(v) {
       const code = state.currency;
       const rate = code === 'EUR' ? 1 : (state.fx[code] || 1);
-      return `${(v * rate).toFixed(2).replace('.', ',')} ${CURRENCIES[code] || '€'}`;
+      const sym = CURRENCIES[code] || '€';
+      const n = (v * rate).toFixed(2);
+      return state.quoteLang === 'en' ? `${sym}${n}` : `${n.replace('.', ',')} ${sym}`;
     }
 
     function clientData() {
       const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
       const r = calculateForGroup(g, state);
+      const u = Lq();
       const lines = [];
 
       const info = [];
-      if (state.weight > 0) info.push(`≈ ${state.weight} г`);
-      if (state.hours > 0) info.push(`≈ ${formatHours(state.hours)}`);
-      const subParts = [`${state.qty} шт. × ${fmtCur(r.printedUnitPrice)}`];
-      if (info.length) subParts.push(`на деталь: ${info.join(', ')}`);
-      if (state.spool === 'client') subParts.push('пластик заказчика');
-      lines.push({ title: `3D-печать · ${g.title}`, sub: subParts.join(' · '), sum: r.printedBatchSubtotal });
+      if (state.weight > 0) info.push(`≈ ${state.weight} ${u.g}`);
+      if (state.hours > 0) info.push(`≈ ${hoursL(state.hours)}`);
+      const subParts = [`${state.qty} ${u.pcs} × ${fmtCur(r.printedUnitPrice)}`];
+      if (info.length) subParts.push(`${u.perPart}: ${info.join(', ')}`);
+      if (state.spool === 'client') subParts.push(u.clientFilament);
+      lines.push({ title: `${u.printing} · ${u.groups[g.id] || g.title}`, sub: subParts.join(' · '), sum: r.printedBatchSubtotal });
 
-      if (state.optAms) lines.push({ title: 'Многоцветная печать (AMS)', sub: '', sum: r.amsSurcharge });
-      if (state.postLevel > 0) lines.push({ title: `Постобработка: ${POST_LEVELS[state.postLevel].name}`, sub: `${state.qty} шт. × ${fmtCur(r.postUnitPrice)}`, sum: r.postBatchCost });
-      if (r.discountPct > 0) lines.push({ title: `Скидка за партию −${r.discountPct}%`, sub: '', sum: -r.discountAmount });
-      if (state.modelLevel > 0) lines.push({ title: `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name}`, sub: 'разово', sum: r.modelingBatchCost });
-      if (r.promoAmount > 0) lines.push({ title: `${state.promoName.trim() || 'Акция'} −${formatNum(r.promoPct, 1)}%`, sub: '', sum: -r.promoAmount });
-      if (r.minTopUp > 0) lines.push({ title: 'Доплата до минимальной цены заказа', sub: '', sum: r.minTopUp });
+      if (state.optAms) lines.push({ title: u.ams, sub: '', sum: r.amsSurcharge });
+      if (state.postLevel > 0) lines.push({ title: `${u.post}: ${u.postNames[state.postLevel]}`, sub: `${state.qty} ${u.pcs} × ${fmtCur(r.postUnitPrice)}`, sum: r.postBatchCost });
+      if (r.discountPct > 0) lines.push({ title: `${u.batchDiscount} −${r.discountPct}%`, sub: '', sum: -r.discountAmount });
+      if (state.modelLevel > 0) lines.push({ title: `${u.modeling}: ${u.modelNames[state.modelLevel]}`, sub: u.oneTime, sum: r.modelingBatchCost });
+      if (r.promoAmount > 0) lines.push({ title: `${state.promoName.trim() || u.promo} −${numL(r.promoPct, 1)}%`, sub: '', sum: -r.promoAmount });
+      if (r.minTopUp > 0) lines.push({ title: u.minTop, sub: '', sum: r.minTopUp });
 
       const totals = [];
       if (state.optVat) {
-        totals.push({ title: 'Сумма без НДС', sum: r.batchTotalPrice });
-        totals.push({ title: `НДС ${formatNum(state.vatPct, 1)}%`, sum: r.vatAmount });
+        totals.push({ title: u.subtotal, sum: r.batchTotalPrice });
+        totals.push({ title: `${u.vat} ${numL(state.vatPct, 1)}%`, sum: r.vatAmount });
       }
       const grand = state.optVat ? r.grossTotal : r.batchTotalPrice;
       return { r, lines, totals, grand };
     }
 
+    function renderLangUI() {
+      document.querySelectorAll('#langSwitch button').forEach((b) => {
+        const on = b.dataset.lang === state.quoteLang;
+        b.className = `px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition ${on ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'}`;
+      });
+    }
+    function bindLangEvents() {
+      document.getElementById('langSwitch').addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-lang]');
+        if (!b || !QUOTE_LANGS[b.dataset.lang]) return;
+        state.quoteLang = b.dataset.lang;
+        saveState();
+        renderClientView();
+      });
+    }
+
     function renderClientView() {
       const { r, lines, totals, grand } = clientData();
-      document.getElementById('clientHeading').textContent = state.clientTitle.trim() || '3D-печать на заказ';
+      document.getElementById('clientHeading').textContent = state.clientTitle.trim() || tr('defaultHeading');
       paintImage();
       updateOfferWarn();
+      renderLangUI();
+      document.getElementById('clientDocLabel').textContent = tr('quoteTitle');
+      document.getElementById('clientTotalLabel').textContent = tr('total');
       const cust = document.getElementById('clientCustomer');
       if (state.clientName.trim()) {
-        cust.textContent = `Заказчик: ${state.clientName.trim()}`;
+        cust.textContent = `${tr('customer')}: ${state.clientName.trim()}`;
         cust.classList.remove('hidden');
       } else {
         cust.classList.add('hidden');
       }
       const qd = state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date();
-      document.getElementById('clientDate').textContent = `Дата: ${qd.toLocaleDateString('ru-RU')}`;
-      document.getElementById('clientOfferNo').textContent = `№ ${effectiveOfferNo()}`;
+      document.getElementById('clientDate').textContent = `${tr('date')}: ${dateL(qd)}`;
+      document.getElementById('clientOfferNo').textContent = `${Lq().no} ${offerNoL(effectiveOfferNo())}`;
       const validEl = document.getElementById('clientValid');
       if (state.validDays > 0) {
         const until = new Date(qd.getTime() + state.validDays * 86400000);
-        validEl.textContent = `Действительно до ${until.toLocaleDateString('ru-RU')}`;
+        validEl.textContent = `${tr('validUntil')} ${dateL(until)}`;
       } else {
         validEl.textContent = '';
       }
-      document.getElementById('clientBrandName').textContent = state.brandName.trim() || '3D-печать';
+      document.getElementById('clientBrandName').textContent = state.brandName.trim() || tr('printing');
       document.getElementById('clientBrandContacts').textContent =
         [state.brandEmail.trim(), state.brandPhone.trim()].filter(Boolean).join(' · ');
 
@@ -2605,7 +2712,7 @@
 
       document.getElementById('clientTotal').textContent = fmtCur(grand);
       document.getElementById('clientUnitNote').textContent =
-        state.qty > 1 ? `В среднем ${fmtCur(grand / state.qty)} за 1 шт.` : '';
+        state.qty > 1 ? tr('avg', { v: fmtCur(grand / state.qty) }) : '';
 
       const noteEl = document.getElementById('clientNoteView');
       if (state.clientNote.trim()) {
@@ -2620,18 +2727,18 @@
     function buildClientText() {
       const { lines, totals, grand } = clientData();
       const out = [];
-      out.push('Расчёт стоимости 3D-печати');
-      out.push(state.clientTitle.trim() || '3D-печать на заказ');
-      if (state.clientName.trim()) out.push(`Заказчик: ${state.clientName.trim()}`);
-      out.push(`№ ${effectiveOfferNo()} от ${(state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date()).toLocaleDateString('ru-RU')}`);
-      if (state.validDays > 0) out.push(`Цена действительна ${state.validDays} дн.`);
+      out.push(tr('quoteTitle'));
+      out.push(state.clientTitle.trim() || tr('defaultHeading'));
+      if (state.clientName.trim()) out.push(`${tr('customer')}: ${state.clientName.trim()}`);
+      out.push(`${Lq().no} ${offerNoL(effectiveOfferNo())} ${Lq().from} ${dateL(state.quoteDate ? new Date(`${state.quoteDate}T12:00:00`) : new Date())}`);
+      if (state.validDays > 0) out.push(tr('validDays', { n: state.validDays }));
       if (state.brandName.trim() || state.brandEmail.trim()) out.push([state.brandName.trim(), state.brandEmail.trim(), state.brandPhone.trim()].filter(Boolean).join(' · '));
       out.push('');
       lines.forEach((l) => out.push(`• ${l.title}${l.sub ? ` (${l.sub})` : ''}: ${l.sum < 0 ? '−' : ''}${fmtCur(Math.abs(l.sum))}`));
       totals.forEach((l) => out.push(`• ${l.title}: ${fmtCur(l.sum)}`));
       out.push('');
-      out.push(`Итого: ${fmtCur(grand)}`);
-      if (state.qty > 1) out.push(`В среднем ${fmtCur(grand / state.qty)} за 1 шт.`);
+      out.push(`${tr('total')}: ${fmtCur(grand)}`);
+      if (state.qty > 1) out.push(tr('avg', { v: fmtCur(grand / state.qty) }));
       if (state.clientNote.trim()) { out.push(''); out.push(state.clientNote.trim()); }
       return out.join('\n');
     }
@@ -2741,6 +2848,7 @@
     render();
     renderHistory();
     bindMediaEvents();
+    bindLangEvents();
     idbGet('current').then((img) => { if (img) setCurrentImage(img, true); });
     loadSyncCfg();
     bindSyncEvents();
