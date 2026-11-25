@@ -351,6 +351,15 @@
               <span id="discountNow" class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">0%</span>
             </label>
 
+            <div class="p-3 rounded-xl border border-slate-200/90 bg-slate-50/60 space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer"><input id="optPromo" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-sm font-medium text-slate-900">Акция: своя скидка в %</span></label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <input id="promoName" type="text" maxlength="40" placeholder="Название акции (необязательно)" class="flex-1 min-w-[10rem] px-2.5 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15" />
+                <span class="flex items-center gap-1 text-xs text-slate-500"><input id="promoPct" type="number" inputmode="decimal" min="0" max="100" step="1" value="10" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> %</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Считается от суммы заказа после скидки за партию, включая моделирование. Видна в смете для заказчика.</p>
+            </div>
+
             <div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
               <label class="flex items-start sm:items-center gap-3 cursor-pointer">
                 <input id="optMin" type="checkbox" class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" />
@@ -414,6 +423,7 @@
             <div id="rowAms" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600">Надбавка AMS (+15% к базовой цене)</dt><dd id="breakdownAmsVal" class="font-semibold text-slate-900"></dd></div>
             <div id="rowPostProcessing" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600"><span id="breakdownPostLabel">Постобработка</span> <span id="breakdownPostFormula" class="text-xs text-slate-400"></span></dt><dd id="breakdownPostVal" class="font-semibold text-slate-900"></dd></div>
             <div id="rowDiscount" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownDiscountLabel">Скидка за партию</dt><dd id="breakdownDiscountVal" class="font-semibold text-rose-600"></dd></div>
+            <div id="rowPromo" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownPromoLabel">Акция</dt><dd id="breakdownPromoVal" class="font-semibold text-rose-600"></dd></div>
             <div id="rowModeling" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownModelingLabel">3D-моделирование (разово)</dt><dd id="breakdownModelingVal" class="font-semibold text-slate-900"></dd></div>
             <div id="rowMin" class="hidden flex items-center justify-between py-1.5 border-b border-slate-100"><dt class="text-slate-600" id="breakdownMinLabel">Доплата до минимальной цены заказа</dt><dd id="breakdownMinVal" class="font-semibold text-slate-900"></dd></div>
             <div class="flex items-center justify-between pt-1.5"><dt class="text-base font-semibold text-slate-900">Итого за партию</dt><dd id="breakdownBatchTotalVal" class="text-lg font-bold text-slate-900"></dd></div>
@@ -579,6 +589,19 @@
           <input id="validDaysInput" type="number" inputmode="numeric" min="0" max="365" step="1" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900/15 focus:border-slate-400" />
         </div>
       </div>
+      <p id="offerWarn" class="text-[11px] text-rose-600 -mt-1 min-h-[0.9rem]"></p>
+      <div class="flex items-center justify-between gap-3 flex-wrap rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+        <label class="flex items-center gap-2 cursor-pointer"><input id="clientPromoCheck" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" /><span class="text-xs font-medium text-slate-700">Акция: скидка в %</span></label>
+        <span class="flex items-center gap-1 text-xs text-slate-500"><input id="clientPromoPct" type="number" inputmode="decimal" min="0" max="100" step="1" class="no-spinner w-16 px-2 py-1 text-right text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-900/15" /> %</span>
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+        <div class="text-xs font-medium text-slate-700 mb-2">Фото изделия (попадёт в смету, PDF и историю)</div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button id="productPickBtn" type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">Выбрать фото / снимок</button>
+          <button id="productClearBtn" type="button" class="hidden px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">Убрать фото</button>
+          <input id="productFile" type="file" accept="image/*" class="hidden" />
+        </div>
+      </div>
       <details class="rounded-lg border border-slate-200 bg-slate-50/60">
         <summary class="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-slate-700">Данные в шапке сметы (название, e-mail, телефон)</summary>
         <div class="px-3 pb-3 space-y-2">
@@ -612,6 +635,7 @@
           <p id="clientCustomer" class="hidden text-sm text-slate-600 mt-1"></p>
         </div>
       </div>
+      <div id="clientImageWrap" class="hidden pt-4 pb-1"><img id="clientImage" alt="Фото изделия" class="mx-auto max-h-60 w-auto max-w-full rounded-xl object-contain" /></div>
       <div id="clientLines" class="divide-y divide-slate-100 text-sm"></div>
       <div class="mt-4 pt-4 border-t-2 border-slate-900 flex items-baseline justify-between gap-3">
         <span class="text-base font-semibold text-slate-900">Итого</span>
@@ -769,6 +793,10 @@
       offerNo: '',
       validDays: 14,
       quoteDate: '',
+      editingId: '',
+      optPromo: false,
+      promoPct: 10,
+      promoName: '',
     };
 
     const state = { ...DEFAULTS, postPrices: [...DEFAULTS.postPrices], modelPrices: [...DEFAULTS.modelPrices], fx: { ...DEFAULTS.fx } };
@@ -855,8 +883,8 @@
         const okArr = (a) => Array.isArray(a) && a.length === 4 && a.every((x) => Number.isFinite(x) && x >= 0);
         if (okArr(s.postPrices)) state.postPrices = [0, s.postPrices[1], s.postPrices[2], s.postPrices[3]];
         if (okArr(s.modelPrices)) state.modelPrices = [0, s.modelPrices[1], s.modelPrices[2], s.modelPrices[3]];
-        ['optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((k) => { state[k] = !!s[k]; });
-        [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100]].forEach(([k, lo, hi]) => {
+        ['optElectric', 'optWear', 'optDefect', 'optDiscount', 'optPromo', 'optMin', 'optVat'].forEach((k) => { state[k] = !!s[k]; });
+        [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100], ['promoPct', 0, 100]].forEach(([k, lo, hi]) => {
           if (Number.isFinite(s[k])) state[k] = Math.min(hi, Math.max(lo, s[k]));
         });
         if (s.currency && CURRENCIES[s.currency]) state.currency = s.currency;
@@ -870,6 +898,9 @@
         if (typeof s.brandEmail === 'string') state.brandEmail = s.brandEmail.slice(0, 80);
         if (typeof s.brandPhone === 'string') state.brandPhone = s.brandPhone.slice(0, 40);
         if (typeof s.offerNo === 'string') state.offerNo = s.offerNo.slice(0, 30);
+        if (typeof s.promoName === 'string') state.promoName = s.promoName.slice(0, 40);
+        if (typeof s.editingId === 'string' && /^[a-z0-9]{4,40}$/i.test(s.editingId)) state.editingId = s.editingId;
+        else if (s.editingId === '') state.editingId = '';
         if (Number.isFinite(s.validDays)) state.validDays = Math.min(365, Math.max(0, Math.round(s.validDays)));
         if (typeof s.quoteDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.quoteDate)) state.quoteDate = s.quoteDate;
         else if (s.quoteDate === '') state.quoteDate = '';
@@ -951,7 +982,10 @@
       const perPieceSum = printedBatchSubtotal + amsSurcharge + postBatchCost;
       const discountPct = params.optDiscount ? discountForQty(params.qty) : 0;
       const discountAmount = (perPieceSum * discountPct) / 100;
-      const beforeMin = perPieceSum - discountAmount + modelingBatchCost;
+      const promoBase = perPieceSum - discountAmount + modelingBatchCost;
+      const promoPct = params.optPromo ? Math.min(100, Math.max(0, params.promoPct || 0)) : 0;
+      const promoAmount = (promoBase * promoPct) / 100;
+      const beforeMin = promoBase - promoAmount;
       const minTopUp = params.optMin && beforeMin < params.minPrice ? params.minPrice - beforeMin : 0;
 
       const batchTotalPrice = beforeMin + minTopUp;
@@ -965,7 +999,7 @@
       return {
         group, effectivePlasticRate, printerRate, plasticCostUnit, machineCostUnit, electricCostUnit, wearCostUnit,
         defectCostUnit, unitCost, batchDirectCost, printedUnitPrice, printedBatchSubtotal, amsSurcharge,
-        postUnitPrice, postBatchCost, modelingBatchCost, discountPct, discountAmount, minTopUp,
+        postUnitPrice, postBatchCost, modelingBatchCost, discountPct, discountAmount, promoPct, promoAmount, minTopUp,
         batchTotalPrice, vatAmount, grossTotal, unitFinalPrice, orderProfit, marginPct,
       };
     }
@@ -1165,10 +1199,10 @@
       document.getElementById('qtySlider').value = state.qty;
       document.getElementById('qtyNumber').value = state.qty;
 
-      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((id) => {
+      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optPromo', 'optMin', 'optVat'].forEach((id) => {
         document.getElementById(id).checked = state[id];
       });
-      [['powerW'], ['tariff'], ['wearRate'], ['defectPct'], ['minPrice'], ['vatPct']].forEach(([k]) => {
+      [['powerW'], ['tariff'], ['wearRate'], ['defectPct'], ['minPrice'], ['vatPct'], ['promoPct']].forEach(([k]) => {
         const el = document.getElementById(k);
         if (el.value === '' || Number(el.value) !== state[k]) el.value = state[k];
       });
@@ -1182,10 +1216,13 @@
       if (searchInput.value !== state.searchQuery) {
         searchInput.value = state.searchQuery;
       }
-      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote'], ['clientOfferInput', 'offerNo'], ['validDaysInput', 'validDays'], ['brandNameInput', 'brandName'], ['brandEmailInput', 'brandEmail'], ['brandPhoneInput', 'brandPhone']].forEach(([id, key]) => {
+      [['clientTitleInput', 'clientTitle'], ['clientNameInput', 'clientName'], ['clientNoteInput', 'clientNote'], ['validDaysInput', 'validDays'], ['brandNameInput', 'brandName'], ['brandEmailInput', 'brandEmail'], ['brandPhoneInput', 'brandPhone']].forEach(([id, key]) => {
         const el = document.getElementById(id);
         if (el && String(el.value) !== String(state[key])) el.value = state[key];
       });
+      const offerEl = document.getElementById('clientOfferInput');
+      if (offerEl && document.activeElement !== offerEl) offerEl.value = effectiveOfferNo();
+      syncPromoControls();
       const clearBtn = document.getElementById('clearSearchBtn');
       if (state.searchQuery.trim().length > 0) {
         clearBtn.classList.remove('hidden');
@@ -1252,6 +1289,10 @@
       $('breakdownDiscountLabel').textContent = `Скидка за партию (−${res.discountPct}%, ${state.qty} шт.)`;
       $('breakdownDiscountVal').textContent = `−${formatEuro(res.discountAmount)}`;
       $('discountNow').textContent = state.optDiscount ? `−${discountForQty(state.qty)}%` : '0%';
+      show('rowPromo', res.promoAmount > 0);
+      $('breakdownPromoLabel').textContent = `${state.promoName.trim() || 'Акция'} (−${formatNum(res.promoPct, 1)}%)`;
+      $('breakdownPromoVal').textContent = `−${formatEuro(res.promoAmount)}`;
+      syncPromoControls();
 
       show('rowModeling', state.modelLevel > 0);
       $('breakdownModelingLabel').textContent = `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name} (разово)`;
@@ -1481,8 +1522,9 @@
           groupId: 'group_1', spool: 'mine', weight: 0, hours: 0, markup: 2.5, qty: 1,
           optAms: false, postLevel: 0, modelLevel: 0,
           optElectric: false, optWear: false, optDefect: false, optDiscount: false, optMin: false, optVat: false,
-          searchQuery: '', clientTitle: '', clientName: '', clientNote: '', offerNo: '', quoteDate: '',
+          searchQuery: '', clientTitle: '', clientName: '', clientNote: '', offerNo: '', quoteDate: '', editingId: '', optPromo: false,
         });
+        setCurrentImage(null);
         render();
       });
     }
@@ -1521,18 +1563,55 @@
     const SEQ_KEY = 'calc3d_seq_v1';
     const HIST_KEY = 'calc3d_history_v1';
 
+    const SEQ_YEAR_KEY = 'calc3d_seqyear_v1';
     function getSeq() {
-      try { const n = parseInt(localStorage.getItem(SEQ_KEY), 10); return Number.isFinite(n) && n > 0 ? n : 1; } catch (e) { return 1; }
+      try {
+        const yr = localStorage.getItem(SEQ_YEAR_KEY);
+        if (yr && yr !== String(new Date().getFullYear())) return 1;
+        const n = parseInt(localStorage.getItem(SEQ_KEY), 10);
+        return Number.isFinite(n) && n > 0 ? n : 1;
+      } catch (e) { return 1; }
     }
-    function setSeq(n) { try { localStorage.setItem(SEQ_KEY, String(n)); } catch (e) { /* ignore */ } }
-    function autoOfferNo() { return `КП-${new Date().getFullYear()}-${String(getSeq()).padStart(3, '0')}`; }
+    function setSeq(n) {
+      try {
+        localStorage.setItem(SEQ_KEY, String(n));
+        localStorage.setItem(SEQ_YEAR_KEY, String(new Date().getFullYear()));
+      } catch (e) { /* ignore */ }
+    }
+    function maxHistoryNo() {
+      const y = new Date().getFullYear();
+      let m = 0;
+      getHistory().forEach((x) => {
+        const mt = /^КП-(\d{4})-(\d+)$/.exec(x.offerNo || '');
+        if (mt && Number(mt[1]) === y) m = Math.max(m, Number(mt[2]));
+      });
+      return m;
+    }
+    function autoOfferNo() {
+      const n = Math.max(getSeq(), maxHistoryNo() + 1);
+      return `КП-${new Date().getFullYear()}-${String(n).padStart(3, '0')}`;
+    }
+    function hasOfferNo(no, exceptId) { return getHistory().some((x) => x.offerNo === no && x.id !== exceptId); }
     function effectiveOfferNo() { return state.offerNo.trim() || autoOfferNo(); }
+    function updateOfferWarn() {
+      const el = document.getElementById('offerWarn');
+      if (!el) return;
+      const no = state.offerNo.trim();
+      el.textContent = no && hasOfferNo(no, state.editingId) ? `Номер ${no} уже есть в истории. При сохранении будет присвоен следующий свободный номер.` : '';
+    }
 
     /* ---------- История заказов ---------- */
+    let histRaw = null;
+    let histParsed = [];
     function getHistory() {
       try {
-        const h = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
-        return Array.isArray(h) ? h : [];
+        const raw = localStorage.getItem(HIST_KEY) || '[]';
+        if (raw !== histRaw) {
+          const h = JSON.parse(raw);
+          histParsed = Array.isArray(h) ? h : [];
+          histRaw = raw;
+        }
+        return histParsed.slice();
       } catch (e) { return []; }
     }
     function setHistory(h) {
@@ -1547,39 +1626,168 @@
       return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     }
 
-    function saveToHistory() {
+    /* ---------- Фото изделия ---------- */
+    let currentImage = null;
+
+    function openIdb() {
+      return new Promise((res, rej) => {
+        if (!window.indexedDB) { rej(new Error('no idb')); return; }
+        const r = indexedDB.open('calc3d', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('imgs');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    }
+    async function idbPut(key, val) {
+      try {
+        const db = await openIdb();
+        await new Promise((res, rej) => { const tx = db.transaction('imgs', 'readwrite'); tx.objectStore('imgs').put(val, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+      } catch (e) { /* ignore */ }
+    }
+    async function idbGet(key) {
+      try {
+        const db = await openIdb();
+        return await new Promise((res, rej) => { const rq = db.transaction('imgs').objectStore('imgs').get(key); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => rej(rq.error); });
+      } catch (e) { return null; }
+    }
+    async function idbDel(key) {
+      try {
+        const db = await openIdb();
+        await new Promise((res, rej) => { const tx = db.transaction('imgs', 'readwrite'); tx.objectStore('imgs').delete(key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+      } catch (e) { /* ignore */ }
+    }
+
+    function scaleToJpeg(img, maxSide, quality) {
+      const sc = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * sc));
+      c.height = Math.max(1, Math.round(img.height * sc));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      return c.toDataURL('image/jpeg', quality);
+    }
+    function resizeImageFile(file, maxSide, quality) {
+      return new Promise((res, rej) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { try { res(scaleToJpeg(img, maxSide, quality)); } catch (e) { rej(e); } URL.revokeObjectURL(url); };
+        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
+        img.src = url;
+      });
+    }
+    function makeThumb(dataUrl) {
+      return new Promise((res) => {
+        if (!dataUrl) { res(''); return; }
+        const img = new Image();
+        img.onload = () => { try { res(scaleToJpeg(img, 110, 0.55)); } catch (e) { res(''); } };
+        img.onerror = () => res('');
+        img.src = dataUrl;
+      });
+    }
+    async function waitForImage() {
+      const im = document.getElementById('clientImage');
+      if (currentImage && im && im.decode) { try { await im.decode(); } catch (e) { /* ignore */ } }
+    }
+    function paintImage() {
+      const wrap = document.getElementById('clientImageWrap');
+      const img = document.getElementById('clientImage');
+      if (!wrap || !img) return;
+      if (currentImage) {
+        if (img.getAttribute('src') !== currentImage) img.src = currentImage;
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+        img.removeAttribute('src');
+      }
+      const clr = document.getElementById('productClearBtn');
+      if (clr) clr.classList.toggle('hidden', !currentImage);
+    }
+    function setCurrentImage(url, skipPersist) {
+      currentImage = url || null;
+      if (!skipPersist) { if (currentImage) idbPut('current', currentImage); else idbDel('current'); }
+      renderClientView();
+    }
+
+    function syncPromoControls() {
+      const pairs = [['clientPromoCheck', 'checked', state.optPromo], ['optPromo', 'checked', state.optPromo]];
+      pairs.forEach(([id, prop, v]) => { const el = document.getElementById(id); if (el && el[prop] !== v) el[prop] = v; });
+      ['clientPromoPct', 'promoPct'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el && Number(el.value) !== state.promoPct) el.value = state.promoPct;
+      });
+      const pn = document.getElementById('promoName');
+      if (pn && document.activeElement !== pn && pn.value !== state.promoName) pn.value = state.promoName;
+    }
+
+    function bindMediaEvents() {
+      document.getElementById('promoName').addEventListener('input', (e) => { state.promoName = e.target.value.slice(0, 40); updateCalculationsOnly(); });
+      document.getElementById('clientPromoCheck').addEventListener('change', (e) => { state.optPromo = e.target.checked; updateCalculationsOnly(); });
+      document.getElementById('clientPromoPct').addEventListener('input', (e) => {
+        const v = parseFloat(String(e.target.value).replace(',', '.'));
+        if (!Number.isFinite(v)) return;
+        state.promoPct = Math.min(100, Math.max(0, v));
+        updateCalculationsOnly();
+      });
+      document.getElementById('productPickBtn').addEventListener('click', () => document.getElementById('productFile').click());
+      document.getElementById('productClearBtn').addEventListener('click', () => setCurrentImage(null));
+      document.getElementById('productFile').addEventListener('change', async (e) => {
+        const f = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!f) return;
+        try { setCurrentImage(await resizeImageFile(f, 900, 0.82)); }
+        catch (err) { showToast('Не удалось открыть фото'); }
+      });
+    }
+
+    /* ---------- Сохранение заказа ---------- */
+    async function saveToHistory() {
       const { grand } = clientData();
-      const no = effectiveOfferNo();
       const g = GROUPS_MAP[state.groupId] || FILAMENT_GROUPS[0];
+      const editing = state.editingId ? getHistory().find((x) => x.id === state.editingId) : null;
+      let update = false;
+      if (editing) {
+        update = window.confirm(`Заказ № ${editing.offerNo} уже сохранён в истории.\n\nОК: обновить этот заказ.\nОтмена: сохранить как новый заказ с новым номером.`);
+      }
+      let no;
+      let note = '';
+      if (update) {
+        no = editing.offerNo;
+      } else {
+        no = effectiveOfferNo();
+        if (hasOfferNo(no)) {
+          const next = autoOfferNo();
+          note = `Номер ${no} уже занят. Присвоен № ${next}`;
+          no = next;
+        }
+      }
       const snap = JSON.parse(JSON.stringify(state));
-      ['searchQuery', 'brandName', 'brandEmail', 'brandPhone', 'validDays'].forEach((k) => delete snap[k]);
+      ['searchQuery', 'brandName', 'brandEmail', 'brandPhone', 'validDays', 'editingId'].forEach((k) => delete snap[k]);
       snap.offerNo = no;
+      const id = update ? editing.id : Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const thumb = currentImage ? await makeThumb(currentImage) : '';
       const entry = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        id,
         ts: Date.now(),
         title: state.clientTitle.trim() || `${g.title}, ${state.weight} г × ${state.qty} шт.`,
         customer: state.clientName.trim(),
         offerNo: no,
         qty: state.qty,
         totalText: fmtCur(grand),
+        thumb,
         snapshot: { state: snap, rates: JSON.parse(JSON.stringify(rates)) },
       };
-      const h = getHistory();
-      const idx = h.findIndex((x) => x.offerNo === no);
-      if (idx >= 0) {
-        entry.id = h[idx].id;
-        h.splice(idx, 1);
-        h.unshift(entry);
-        setHistory(h);
-        showToast(`Обновлено в истории: № ${no}`);
-      } else {
-        h.unshift(entry);
-        setHistory(h);
-        if (no === autoOfferNo()) setSeq(getSeq() + 1);
-        showToast(`Сохранено в историю: № ${no}`);
-      }
+      const h = getHistory().filter((x) => x.id !== id);
+      h.unshift(entry);
+      setHistory(h);
+      if (currentImage) idbPut(id, currentImage); else idbDel(id);
+      const mt = /^КП-(\d{4})-(\d+)$/.exec(no);
+      if (mt && Number(mt[1]) === new Date().getFullYear()) setSeq(Math.max(getSeq(), Number(mt[2]) + 1));
       state.offerNo = no;
+      state.editingId = id;
       if (!state.quoteDate) state.quoteDate = isoDate(entry.ts);
+      showToast(note || (update ? `Обновлено в истории: № ${no}` : `Сохранено в историю: № ${no}`));
       saveState();
       syncInputsUI();
       renderClientView();
@@ -1595,9 +1803,12 @@
       document.getElementById('historyCount').textContent = all.length ? `Сохранено заказов: ${all.length}` : 'Пока пусто. Нажмите «Сохранить расчёт в историю».';
       list.innerHTML = items.map((x) => `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-slate-200/90 bg-slate-50/60">
-          <div class="min-w-0">
-            <div class="text-sm font-semibold text-slate-900 truncate">${esc(x.title)}</div>
-            <div class="text-xs text-slate-500 mt-0.5">${new Date(x.ts).toLocaleDateString('ru-RU')} · № ${esc(x.offerNo)}${x.customer ? ` · ${esc(x.customer)}` : ''} · ${x.qty} шт.</div>
+          <div class="min-w-0 flex items-center gap-3">
+            ${x.thumb && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(x.thumb) ? `<img src="${x.thumb}" alt="" class="w-12 h-12 shrink-0 rounded-lg object-cover border border-slate-200 bg-white" />` : ''}
+            <div class="min-w-0">
+              <div class="text-sm font-semibold text-slate-900 truncate">${esc(x.title)}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${new Date(x.ts).toLocaleDateString('ru-RU')} · № ${esc(x.offerNo)}${x.customer ? ` · ${esc(x.customer)}` : ''} · ${x.qty} шт.</div>
+            </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <span class="text-sm font-bold text-slate-900 mr-1">${esc(x.totalText)}</span>
@@ -1615,7 +1826,10 @@
       state.offerNo = x.offerNo;
       state.quoteDate = isoDate(x.ts);
       state.searchQuery = '';
+      state.editingId = x.id;
       if (x.snapshot.rates) { applyRatesObj(x.snapshot.rates); saveRates(); renderRateEditor(); }
+      setCurrentImage(x.thumb || null);
+      idbGet(x.id).then((img) => { if (img) setCurrentImage(img); });
       render();
       window.scrollTo(0, 0);
       showToast(`Открыт расчёт № ${x.offerNo}`);
@@ -1624,6 +1838,8 @@
     function deleteFromHistory(id) {
       if (!window.confirm('Удалить этот заказ из истории?')) return;
       setHistory(getHistory().filter((e) => e.id !== id));
+      idbDel(id);
+      if (state.editingId === id) { state.editingId = ''; saveState(); }
       const del = getDeleted();
       del[id] = Date.now();
       setDeleted(del);
@@ -1690,6 +1906,7 @@
         return null;
       }
       renderClientView();
+      await waitForImage();
       return window.html2canvas(document.getElementById('clientCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
     }
 
@@ -1705,7 +1922,7 @@
     let prepTimer = null;
 
     function quoteKey() {
-      return `${buildClientText()}|${state.currency}`;
+      return `${buildClientText()}|${state.currency}|${currentImage ? currentImage.length + currentImage.slice(-16) : ''}`;
     }
 
     function setQuoteStatus(msg) {
@@ -1736,6 +1953,7 @@
       if (quoteCache.key === key && quoteCache.png) { setQuoteStatus('Смета готова к отправке'); return true; }
       quoteBusy = true;
       try {
+        await waitForImage();
         const canvas = await window.html2canvas(document.getElementById('clientCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
         const png = await canvasToBlob(canvas, 'image/png');
         const jpg = await canvasToBlob(canvas, 'image/jpeg', 0.92);
@@ -1863,6 +2081,7 @@
         offerNo: String(e.offerNo || '').slice(0, 40),
         qty: Number.isFinite(e.qty) ? Math.round(e.qty) : 1,
         totalText: String(e.totalText || '').slice(0, 40),
+        thumb: typeof e.thumb === 'string' && e.thumb.length < 30000 && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(e.thumb) ? e.thumb : '',
         snapshot: { state: e.snapshot.state, rates: e.snapshot.rates || null },
       };
     }
@@ -1896,7 +2115,7 @@
       const hist = history.slice().sort((a, b) => b.ts - a.ts || (a.id < b.id ? -1 : 1));
       const del = {};
       Object.keys(deleted).sort().forEach((k) => { del[k] = deleted[k]; });
-      return { v: 1, history: hist, deleted: del, settings, settingsHash: hashStr(JSON.stringify(settings)), offerSeq };
+      return { v: 1, history: hist, deleted: del, settings, settingsHash: hashStr(JSON.stringify(settings)), offerSeq, offerYear: new Date().getFullYear() };
     }
 
     /* --- шифрование: PBKDF2 (SHA-256) + AES-256-GCM, сжатие gzip --- */
@@ -2069,7 +2288,7 @@
           applyRemoteSettings(remote.settings);
         }
         const settings = getSyncSettings();
-        const seq = Math.max(getSeq(), remote && Number.isFinite(remote.offerSeq) ? Math.round(remote.offerSeq) : 1);
+        const seq = Math.max(getSeq(), remote && Number.isFinite(remote.offerSeq) && (remote.offerYear === undefined || remote.offerYear === new Date().getFullYear()) ? Math.round(remote.offerSeq) : 1);
 
         setHistory(merged); setDeleted(del); setSeq(seq);
 
@@ -2277,14 +2496,14 @@
         });
       });
 
-      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optMin', 'optVat'].forEach((id) => {
+      ['optAms', 'optElectric', 'optWear', 'optDefect', 'optDiscount', 'optPromo', 'optMin', 'optVat'].forEach((id) => {
         document.getElementById(id).addEventListener('change', (e) => {
           state[id] = e.target.checked;
           updateCalculationsOnly();
         });
       });
 
-      [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100]].forEach(([id, lo, hi]) => {
+      [['powerW', 0, 5000], ['tariff', 0, 5], ['wearRate', 0, 10], ['defectPct', 0, 100], ['minPrice', 0, 10000], ['vatPct', 0, 100], ['promoPct', 0, 100]].forEach(([id, lo, hi]) => {
         document.getElementById(id).addEventListener('input', (e) => {
           const v = parseFloat(String(e.target.value).replace(',', '.'));
           if (!Number.isFinite(v)) return;
@@ -2334,6 +2553,7 @@
       if (state.postLevel > 0) lines.push({ title: `Постобработка: ${POST_LEVELS[state.postLevel].name}`, sub: `${state.qty} шт. × ${fmtCur(r.postUnitPrice)}`, sum: r.postBatchCost });
       if (r.discountPct > 0) lines.push({ title: `Скидка за партию −${r.discountPct}%`, sub: '', sum: -r.discountAmount });
       if (state.modelLevel > 0) lines.push({ title: `3D-моделирование: ${MODEL_LEVELS[state.modelLevel].name}`, sub: 'разово', sum: r.modelingBatchCost });
+      if (r.promoAmount > 0) lines.push({ title: `${state.promoName.trim() || 'Акция'} −${formatNum(r.promoPct, 1)}%`, sub: '', sum: -r.promoAmount });
       if (r.minTopUp > 0) lines.push({ title: 'Доплата до минимальной цены заказа', sub: '', sum: r.minTopUp });
 
       const totals = [];
@@ -2348,6 +2568,8 @@
     function renderClientView() {
       const { r, lines, totals, grand } = clientData();
       document.getElementById('clientHeading').textContent = state.clientTitle.trim() || '3D-печать на заказ';
+      paintImage();
+      updateOfferWarn();
       const cust = document.getElementById('clientCustomer');
       if (state.clientName.trim()) {
         cust.textContent = `Заказчик: ${state.clientName.trim()}`;
@@ -2518,6 +2740,8 @@
     renderRateEditor();
     render();
     renderHistory();
+    bindMediaEvents();
+    idbGet('current').then((img) => { if (img) setCurrentImage(img, true); });
     loadSyncCfg();
     bindSyncEvents();
     renderSyncUI();
